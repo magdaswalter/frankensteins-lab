@@ -3,6 +3,9 @@ on:
   push:
     branches:
       - main
+env:
+  REACT_APP_INFURA_API_KEY: ${{ secrets.REACT_APP_INFURA_API_KEY }}
+  REACT_APP_INFURA_API_SECRET: ${{ secrets.REACT_APP_INFURA_API_SECRET }}
 jobs:
   build:
     name: Build
@@ -39,5 +42,3 @@ jobs:
           args: deploy --only hosting
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
-          REACT_APP_INFURA_API_KEY: ${{ secrets.REACT_APP_INFURA_API_KEY }}
-          REACT_APP_INFURA_API_SECRET: ${{ secrets.REACT_APP_INFURA_API_SECRET }}
