@@ -43,6 +43,7 @@ const UploadToIpfs: React.FC = () => {
       <form>
         <input type="file" onChange={handleFileUpload} />
       </form>
+      <div>{process.env.INFURA_API_KEY}</div>
       {imageCid && (
         <div>
           <p>Image uploaded to IPFS with CID:</p>
