@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { create } from "ipfs-http-client";
 
-const infuraApiKey = process.env.INFURA_API_KEY;
-const infuraApiSecret = process.env.INFURA_API_SECRET;
+const infuraApiKey = process.env.REACT_APP_INFURA_API_KEY;
+const infuraApiSecret = process.env.REACT_APP_INFURA_API_SECRET;
 const authorization = "Basic " + btoa(infuraApiKey + ":" + infuraApiSecret);
 
 const UploadToIpfs: React.FC = () => {
@@ -47,7 +47,12 @@ const UploadToIpfs: React.FC = () => {
       <form>
         <input type="file" onChange={handleFileUpload} />
       </form>
-      <div>fdfsudhfdfhdufhdfufhduhfufhud{process.env.INFURA_API_KEY}</div>
+      <div>
+        fdfsudhfdfhdufhdfufhduhfufhud{process.env.REACT_APP_INFURA_API_KEY}
+      </div>
+      <div>
+        rrrrrrrrdufhdfufhduhfufhud{process.env.REACT_APP_INFURA_API_SECRET}
+      </div>
       {imageCid && (
         <div>
           <p>Image uploaded to IPFS with CID:</p>
