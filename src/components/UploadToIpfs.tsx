@@ -53,7 +53,9 @@ const UploadToIpfs: React.FC = () => {
             width={250}
             alt="Uploaded to IPFS. You can find it at the following link:"
           />
-          <a>{`https://gateway.pinata.cloud/ipfs/${imageCid}`}</a>
+          <a href={`https://gateway.pinata.cloud/ipfs/${imageCid}`}>
+            Here is a link to your picture
+          </a>
         </div>
       )}
       {errorMessage && <p>{errorMessage}</p>}
