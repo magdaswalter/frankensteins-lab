@@ -39,7 +39,11 @@ const UploadToIpfs: React.FC = () => {
 
   return (
     <div>
-      <h1>Upload to IPFS</h1>
+      <h1>
+        Greetings! This is a very dangerous place. At this place there is only
+        one rule. And that rule is Norbi's rule! He can see you everywhere, be
+        careful!
+      </h1>
       <form>
         <input type="file" onChange={handleFileUpload} />
       </form>
