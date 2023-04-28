@@ -44,15 +44,11 @@ const UploadToIpfs: React.FC = () => {
         one rule. And that rule is Norbi's rule! He can see you everywhere, be
         careful!
       </h1>
+      <h1>Please upload a photo</h1>
       <form>
         <input type="file" onChange={handleFileUpload} />
       </form>
-      <div>
-        fdfsudhfdfhdufhdfufhduhfufhud{process.env.REACT_APP_INFURA_API_KEY}
-      </div>
-      <div>
-        rrrrrrrrdufhdfufhduhfufhud{process.env.REACT_APP_INFURA_API_SECRET}
-      </div>
+
       {imageCid && (
         <div>
           <p>Image uploaded to IPFS with CID:</p>

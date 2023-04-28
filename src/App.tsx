@@ -7,7 +7,9 @@ const App = () => {
   return (
     <Grid container>
       <Header />
-      <UploadToIpfs />
+      <Grid margin={5}>
+        <UploadToIpfs />
+      </Grid>
     </Grid>
   );
 };

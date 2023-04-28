@@ -77,7 +77,6 @@ const Header = () => {
               </Button>
             ))}
           </Box>
-
           <Box sx={{ flexGrow: 0 }}>
             <ConnectToWallet />
           </Box>
