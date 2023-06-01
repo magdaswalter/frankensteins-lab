@@ -1,14 +1,20 @@
+import { Route, Routes } from "react-router";
 import React from "react";
-import Header from "./pages/Header";
+import Header from "./components/Header";
 import { Grid } from "@mui/material";
-import UploadToIpfs from "./components/UploadToIpfs";
+import HomePage from "./pages/HomePage";
+import CreatePage from "./pages/CreatePage";
 
 const App = () => {
   return (
     <Grid container>
       <Header />
-      <Grid margin={5}>
-        <UploadToIpfs />
+      <Grid margin={5} width={"100%"}>
+        <Routes>
+          <Route path="/*" Component={HomePage} />
+          <Route index path="/" Component={HomePage} />
+          <Route path="/create" Component={CreatePage} />
+        </Routes>
       </Grid>
     </Grid>
   );

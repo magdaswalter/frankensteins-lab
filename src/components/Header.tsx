@@ -9,9 +9,21 @@ import Container from "@mui/material/Container";
 import Button from "@mui/material/Button";
 import MenuItem from "@mui/material/MenuItem";
 import MenuIcon from "@mui/icons-material/Menu";
-import ConnectToWallet from "../components/ConnectToWallet";
+import ConnectToWallet from "./ConnectToWallet";
+import { Link } from "react-router-dom";
 
-const pages = ["Collections", "Create", "FAQ"];
+type attributesType = { name: string; link: string };
+type headerType = {
+  collections: attributesType;
+  create: attributesType;
+  faq: attributesType;
+};
+
+const pages: headerType = {
+  collections: { name: "Collections", link: "./" },
+  create: { name: "Create", link: "/create" },
+  faq: { name: "FAQ", link: "./" },
+};
 
 const Header = () => {
   const [anchorElNav, setAnchorElNav] = React.useState<null | HTMLElement>(
@@ -59,21 +71,23 @@ const Header = () => {
                 display: { xs: "block", md: "none" },
               }}
             >
-              {pages.map((page) => (
-                <MenuItem key={page} onClick={handleCloseNavMenu}>
-                  <Typography textAlign="center">{page}</Typography>
+              {Object.values(pages).map((page) => (
+                <MenuItem key={page.name} onClick={handleCloseNavMenu}>
+                  <Typography textAlign="center">{page.name}</Typography>
                 </MenuItem>
               ))}
             </Menu>
           </Box>
           <Box sx={{ flexGrow: 1, display: { xs: "none", md: "flex" } }}>
-            {pages.map((page) => (
+            {Object.values(pages).map((page) => (
               <Button
-                key={page}
+                key={page.name}
+                component={Link}
+                to={page.link}
                 onClick={handleCloseNavMenu}
                 sx={{ my: 2, color: "white", display: "block" }}
               >
-                {page}
+                {page.name}
               </Button>
             ))}
           </Box>
