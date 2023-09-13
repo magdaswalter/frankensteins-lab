@@ -1,4 +1,4 @@
-name: Norbi rules CI
+name: Frankensteins lab CI
 on:
   push:
     branches:
