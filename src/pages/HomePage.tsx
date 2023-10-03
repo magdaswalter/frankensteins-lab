@@ -1,8 +1,8 @@
 import React from "react";
-import UploadToIpfs from "../components/UploadToIpfs";
+import UploadToPinata from "../components/UploadToPinata";
 
 const HomePage = () => {
-  return <UploadToIpfs />;
+  return <UploadToPinata />;
 };
 
 export default HomePage;

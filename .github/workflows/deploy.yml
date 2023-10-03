@@ -4,8 +4,8 @@ on:
     branches:
       - main
 env:
-  REACT_APP_INFURA_API_KEY: ${{ secrets.REACT_APP_INFURA_API_KEY }}
-  REACT_APP_INFURA_API_SECRET: ${{ secrets.REACT_APP_INFURA_API_SECRET }}
+  REACT_APP_PINATA_API_KEY: ${{ secrets.REACT_APP_PINATA_API_KEY }}
+  REACT_APP_PINATA_API_SECRET: ${{ secrets.REACT_APP_PINATA_API_SECRET }}
 jobs:
   build:
     name: Build

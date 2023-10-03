@@ -61,7 +61,7 @@ const Generator: React.FC<GeneratorProps> = ({ filePaths }) => {
           </Grid>
           {generatedImages.map((image) => (
             <Grid item xs={6} key={image.id}>
-              <img src={image.imageURL} alt={`Generated Image ${image.id}`} />
+              {/* <img src={image.imageURL} alt={`Generated Image ${image.id}`} /> */}
             </Grid>
           ))}
           <Grid item xs={12}>
