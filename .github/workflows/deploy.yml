@@ -4,6 +4,7 @@ on:
     branches:
       - main
 env:
+  GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GCP_SA_KEY }}
   REACT_APP_PINATA_API_KEY: ${{ secrets.REACT_APP_PINATA_API_KEY }}
   REACT_APP_PINATA_API_SECRET: ${{ secrets.REACT_APP_PINATA_API_SECRET }}
 jobs:
