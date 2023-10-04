@@ -6,6 +6,7 @@ on:
 env:
   REACT_APP_PINATA_API_KEY: ${{ secrets.REACT_APP_PINATA_API_KEY }}
   REACT_APP_PINATA_API_SECRET: ${{ secrets.REACT_APP_PINATA_API_SECRET }}
+  GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
 jobs:
   build:
     name: Build
@@ -40,6 +41,6 @@ jobs:
         uses: w9jds/firebase-action@master
         with:
           args: deploy --only hosting
-        env:
-          GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
-          # FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+        # env:
+        #   GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+        # FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
