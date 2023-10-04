@@ -37,10 +37,13 @@ jobs:
         with:
           name: build
           path: build
+      - name: Set Google Application Credentials
+        run: echo "$GCP_SA_KEY" > /opt/gcp_key.json
+        env:
+          GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+      - name: Export Google Application Credentials
+        run: export GOOGLE_APPLICATION_CREDENTIALS=/opt/gcp_key.json
       - name: Deploy to Firebase
         uses: w9jds/firebase-action@master
         with:
           args: deploy --only hosting
-        # env:
-        #   GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
-        # FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
