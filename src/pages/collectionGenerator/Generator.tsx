@@ -17,18 +17,24 @@ const Generator: React.FC<GeneratorProps> = ({ filePaths }) => {
   const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
 
   const handleGenerateImages = async () => {
-    const combinedImages: GeneratedImage[] = [];
+    try {
+      // Call combineImages once to get all combinations
+      const combinedImageURLs = await combineImages(filePaths);
 
-    for (let i = 0; i < numOfImages; i++) {
-      try {
-        const combinedImageURL = await combineImages(filePaths);
-        combinedImages.push({ id: i, imageURL: combinedImageURL });
-      } catch (error) {
-        console.error("Failed to generate images:", error);
-      }
+      // Map each URL to a GeneratedImage object
+      const combinedImages = combinedImageURLs.map((imageURL, i) => ({
+        id: i,
+        imageURL: imageURL,
+      }));
+      // combinedImages.map((image) => {
+      //   console.log("blaaaa", image.id);
+      // });
+
+      // Update state with the generated images
+      setGeneratedImages(combinedImages);
+    } catch (error) {
+      console.error("Failed to generate images:", error);
     }
-
-    setGeneratedImages(combinedImages);
   };
 
   const handleDownloadImages = () => {
@@ -61,7 +67,7 @@ const Generator: React.FC<GeneratorProps> = ({ filePaths }) => {
           </Grid>
           {generatedImages.map((image) => (
             <Grid item xs={6} key={image.id}>
-              {/* <img src={image.imageURL} alt={`Generated Image ${image.id}`} /> */}
+              <img src={image.imageURL} alt={`${image.id}`} />
             </Grid>
           ))}
           <Grid item xs={12}>
