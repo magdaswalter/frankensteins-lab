@@ -1,7 +1,9 @@
 import { FileWithPath } from "react-dropzone";
-import { CartesianProduct } from "./CartesianProduct";
 
-const combineImages = (filePaths: FileWithPath[]): Promise<string[]> => {
+const combineImages = (
+  filePaths: FileWithPath[],
+  numOfImages: number
+): Promise<string[]> => {
   return new Promise(async (resolve, reject) => {
     const organizedFiles: {
       [key: string]: FileWithPath[];
@@ -26,12 +28,20 @@ const combineImages = (filePaths: FileWithPath[]): Promise<string[]> => {
       });
 
     const combinationsInput = Object.values(organizedFiles);
-
-    const allCombinations = CartesianProduct(combinationsInput);
-
     const combinedImages: string[] = [];
 
-    for (const combination of allCombinations) {
+    const generateCombination = async (
+      indexArray: number[],
+      maxIndices: number[]
+    ): Promise<void> => {
+      if (combinedImages.length >= numOfImages) {
+        return; // Stop generating more combinations when the limit is reached
+      }
+
+      const combination: FileWithPath[] = indexArray.map(
+        (index, i) => combinationsInput[i][index]
+      );
+
       const canvas = document.createElement("canvas");
       canvas.width = 800;
       canvas.height = 600;
@@ -43,9 +53,25 @@ const combineImages = (filePaths: FileWithPath[]): Promise<string[]> => {
       }
 
       combinedImages.push(canvas.toDataURL());
-    }
 
-    resolve(combinedImages);
+      // Increment the rightmost index and carry over if needed
+      for (let i = indexArray.length - 1; i >= 0; i--) {
+        if (indexArray[i] < maxIndices[i] - 1) {
+          indexArray[i]++;
+          return generateCombination(indexArray, maxIndices);
+        } else if (i !== 0) {
+          indexArray[i] = 0;
+        }
+      }
+    };
+
+    const maxIndices = combinationsInput.map((files) => files.length);
+    await generateCombination(
+      new Array(combinationsInput.length).fill(0),
+      maxIndices
+    );
+
+    resolve(combinedImages.slice(0, numOfImages));
   });
 };
 

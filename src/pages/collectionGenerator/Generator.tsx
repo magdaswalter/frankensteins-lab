@@ -18,19 +18,13 @@ const Generator: React.FC<GeneratorProps> = ({ filePaths }) => {
 
   const handleGenerateImages = async () => {
     try {
-      // Call combineImages once to get all combinations
-      const combinedImageURLs = await combineImages(filePaths);
+      const combinedImageURLs = await combineImages(filePaths, numOfImages);
 
-      // Map each URL to a GeneratedImage object
       const combinedImages = combinedImageURLs.map((imageURL, i) => ({
         id: i,
         imageURL: imageURL,
       }));
-      // combinedImages.map((image) => {
-      //   console.log("blaaaa", image.id);
-      // });
 
-      // Update state with the generated images
       setGeneratedImages(combinedImages);
     } catch (error) {
       console.error("Failed to generate images:", error);
