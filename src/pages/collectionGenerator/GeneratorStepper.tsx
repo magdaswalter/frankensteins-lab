@@ -10,7 +10,8 @@ import {
 } from "@mui/material";
 import FolderUploader from "./FolderUploader";
 import { FileWithPath } from "react-dropzone";
-import Generator from "./Generator";
+import Generator, { GeneratedImage } from "./Generator";
+import GeneratedImages from "./GeneratedImages";
 
 const StyledStepper = styled(Stepper)(() => ({}));
 
@@ -18,6 +19,7 @@ const steps = [
   "Collection Details",
   "Upload",
   "Generator Details",
+  "Generated Images",
   "Upload Generated Collection",
   "Deploy",
 ];
@@ -25,6 +27,7 @@ const steps = [
 const GeneratorStepper = () => {
   const [activeStep, setActiveStep] = useState(0);
   const [filePaths, setFilePaths] = useState<FileWithPath[]>([]);
+  const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
 
   const handleNext = () => {
     setActiveStep((prevActiveStep) => prevActiveStep + 1);
@@ -36,6 +39,10 @@ const GeneratorStepper = () => {
 
   const handleSetFilePaths = (files: FileWithPath[]) => {
     setFilePaths(files);
+  };
+
+  const handleSetGeneratedImages = (images: GeneratedImage[]) => {
+    setGeneratedImages(images);
   };
 
   return (
@@ -66,9 +73,15 @@ const GeneratorStepper = () => {
           {/* Render the content of each step */}
           {activeStep === 0 && <CollectionDetails />}
           {activeStep === 1 && <Upload setFilePaths={handleSetFilePaths} />}
-          {activeStep === 2 && <GeneratorDetails filePaths={filePaths} />}
-          {activeStep === 3 && <UploadGeneratedCollection />}
-          {activeStep === 4 && <Deploy />}
+          {activeStep === 2 && (
+            <Generator
+              filePaths={filePaths}
+              setGeneratedImages={handleSetGeneratedImages}
+            />
+          )}
+          {activeStep === 3 && <GeneratedImages images={generatedImages} />}
+          {activeStep === 4 && <UploadGeneratedCollection />}
+          {activeStep === 5 && <Deploy />}
           <Grid item xs={12} mt={3}>
             <Button disabled={activeStep === 0} onClick={handleBack}>
               Back
@@ -103,18 +116,6 @@ const Upload = ({ setFilePaths }: UploadProps) => {
   return (
     <Grid item width={"100%"}>
       <FolderUploader onFilesAdded={handleFolderUpload} />
-    </Grid>
-  );
-};
-
-interface GeneratorDetailsProps {
-  filePaths: FileWithPath[];
-}
-
-const GeneratorDetails = ({ filePaths }: GeneratorDetailsProps) => {
-  return (
-    <Grid item width={"100%"}>
-      <Generator filePaths={filePaths} />
     </Grid>
   );
 };

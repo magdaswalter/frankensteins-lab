@@ -2,10 +2,10 @@ import { FileWithPath } from "react-dropzone";
 
 const combineImages = (
   filePaths: FileWithPath[],
-  numOfImages: number
+  numOfImages: number,
+  progressCallback: (progress: number) => void
 ): Promise<string[]> => {
   return new Promise(async (resolve, reject) => {
-    // Organize files into a structured format
     const organizedFiles: {
       [key: string]: FileWithPath[];
     } = {};
@@ -21,19 +21,15 @@ const combineImages = (
       }
     });
 
-    // Function to load an image
     const loadImage = (file: FileWithPath): Promise<HTMLImageElement> =>
       new Promise((resolve) => {
         const img = new Image();
         img.onload = () => resolve(img);
         img.src = URL.createObjectURL(file);
       });
-
-    // Preparing for combinations
     const combinationsInput = Object.values(organizedFiles);
     const combinedImages: string[] = [];
 
-    // Function to generate combinations
     const generateCombination = async (
       indexArray: number[],
       maxIndices: number[]
@@ -45,7 +41,6 @@ const combineImages = (
       );
       const images = await Promise.all(combination.map(loadImage));
 
-      // Determine canvas size based on the largest image
       const canvasWidth = Math.max(...images.map((img) => img.width));
       const canvasHeight = Math.max(...images.map((img) => img.height));
 
@@ -60,12 +55,15 @@ const combineImages = (
         });
 
         combinedImages.push(canvas.toDataURL());
+
+        // Update progress
+        const progressPercentage = (combinedImages.length / numOfImages) * 100;
+        progressCallback(progressPercentage);
       } else {
         reject(new Error("Failed to get canvas context"));
         return;
       }
 
-      // Increment the rightmost index and carry over if needed
       for (let i = indexArray.length - 1; i >= 0; i--) {
         if (indexArray[i] < maxIndices[i] - 1) {
           indexArray[i]++;
@@ -76,7 +74,6 @@ const combineImages = (
       }
     };
 
-    // Initiating combination generation
     const maxIndices = combinationsInput.map((files) => files.length);
     await generateCombination(
       new Array(combinationsInput.length).fill(0),

@@ -1,24 +1,38 @@
 import React, { useState } from "react";
-import { Button, Grid, Typography } from "@mui/material";
+import { Button, Grid, Typography, CircularProgress, Box } from "@mui/material";
 import { FileWithPath } from "react-dropzone";
-import { combineImages } from "./ImageCombiner";
+import { combineImages } from "./ImageCombiner"; // Adjust the import path as needed
 
-interface GeneratedImage {
+export interface GeneratedImage {
   id: number;
   imageURL: string;
 }
 
 interface GeneratorProps {
   filePaths: FileWithPath[];
+  setGeneratedImages: (generatedImages: GeneratedImage[]) => void;
 }
 
-const Generator: React.FC<GeneratorProps> = ({ filePaths }) => {
+const Generator: React.FC<GeneratorProps> = ({
+  filePaths,
+  setGeneratedImages,
+}) => {
   const [numOfImages, setNumOfImages] = useState(1);
-  const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [generationComplete, setGenerationComplete] = useState(false);
 
   const handleGenerateImages = async () => {
     try {
-      const combinedImageURLs = await combineImages(filePaths, numOfImages);
+      setLoading(true);
+      setProgress(0);
+      setGenerationComplete(false);
+
+      const combinedImageURLs = await combineImages(
+        filePaths,
+        numOfImages,
+        (progress) => setProgress(progress)
+      );
 
       const combinedImages = combinedImageURLs.map((imageURL, i) => ({
         id: i,
@@ -26,13 +40,12 @@ const Generator: React.FC<GeneratorProps> = ({ filePaths }) => {
       }));
 
       setGeneratedImages(combinedImages);
+      setGenerationComplete(true);
     } catch (error) {
       console.error("Failed to generate images:", error);
+    } finally {
+      setLoading(false);
     }
-  };
-
-  const handleDownloadImages = () => {
-    // Logic to download the generated images
   };
 
   return (
@@ -50,26 +63,30 @@ const Generator: React.FC<GeneratorProps> = ({ filePaths }) => {
         />
       </Grid>
       <Grid item xs={6}>
-        <Button variant="contained" onClick={handleGenerateImages}>
+        <Button
+          variant="contained"
+          onClick={handleGenerateImages}
+          disabled={loading}
+        >
           Generate Images
         </Button>
       </Grid>
-      {generatedImages.length > 0 && (
-        <>
-          <Grid item xs={12}>
-            <Typography variant="h6">Generated Images:</Typography>
-          </Grid>
-          {generatedImages.map((image) => (
-            <Grid item xs={6} key={image.id}>
-              <img src={image.imageURL} alt={`${image.id}`} />
-            </Grid>
-          ))}
-          <Grid item xs={12}>
-            <Button variant="contained" onClick={handleDownloadImages}>
-              Download Images
-            </Button>
-          </Grid>
-        </>
+      {loading && (
+        <Grid item xs={12}>
+          <Box display="flex" alignItems="center">
+            <CircularProgress />
+            <Typography variant="body1" style={{ marginLeft: 10 }}>
+              Generating... {progress.toFixed(2)}%
+            </Typography>
+          </Box>
+        </Grid>
+      )}
+      {generationComplete && (
+        <Grid item xs={12}>
+          <Typography variant="h6" style={{ color: "green" }}>
+            Image generation complete!
+          </Typography>
+        </Grid>
       )}
     </Grid>
   );

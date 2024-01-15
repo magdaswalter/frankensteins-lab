@@ -8,6 +8,7 @@ interface FolderUploaderProps {
 
 const FolderUploader = ({ onFilesAdded }: FolderUploaderProps) => {
   const [selectedFiles, setSelectedFiles] = useState<FileWithPath[]>([]);
+  const [folderDropped, setFolderDropped] = useState<boolean>(false);
 
   const traverseFolder = (entry: any, path: string) => {
     const reader = entry.createReader();
@@ -37,6 +38,8 @@ const FolderUploader = ({ onFilesAdded }: FolderUploaderProps) => {
   };
 
   const onDrop = async (acceptedFiles: File[]) => {
+    setFolderDropped(true); // Set the flag when a folder is dropped
+
     const fileArray: FileWithPath[] = [];
 
     for (const file of acceptedFiles) {
@@ -62,11 +65,22 @@ const FolderUploader = ({ onFilesAdded }: FolderUploaderProps) => {
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     multiple: true,
+    onDragEnter: () => setFolderDropped(false), // Reset the flag on new drag
   });
 
   const dropzoneClassName = isDragActive
     ? "folder-uploader-dropzone active"
     : "folder-uploader-dropzone";
+
+  const renderMessage = () => {
+    if (folderDropped) {
+      return "Folder has been uploaded";
+    } else if (isDragActive) {
+      return "Drop the folder here";
+    } else {
+      return "Drag and drop a folder here or click to select";
+    }
+  };
 
   return (
     <Grid container spacing={2} justifyContent={"center"}>
@@ -98,11 +112,7 @@ const FolderUploader = ({ onFilesAdded }: FolderUploaderProps) => {
           }}
         >
           <input {...getInputProps()} />
-          <Typography variant="body1">
-            {isDragActive
-              ? "Drop the folder here"
-              : "Drag and drop a folder here or click to select"}
-          </Typography>
+          <Typography variant="body1">{renderMessage()}</Typography>
         </Box>
       </Grid>
     </Grid>
