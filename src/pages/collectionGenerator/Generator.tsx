@@ -35,14 +35,47 @@ const Generator = ({
   const [folders, setFolders] = useState(mainFolders);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
 
+  const reorderFilePaths = useCallback(() => {
+    const reorderedFilePaths: FileWithPath[] = [];
+
+    const folderMap = new Map<string, FileWithPath[]>();
+    filePaths.forEach((filePath) => {
+      if (filePath?.path) {
+        const mainFolder = filePath.path.split("/")[2];
+        if (!folderMap.has(mainFolder)) {
+          folderMap.set(mainFolder, []);
+        }
+        folderMap.get(mainFolder)!.push(filePath);
+      }
+    });
+
+    folders.forEach((folder) => {
+      if (folderMap.has(folder)) {
+        const folderFiles = folderMap.get(folder);
+        if (folderFiles) {
+          reorderedFilePaths.push(...folderFiles);
+        }
+      }
+    });
+
+    return reorderedFilePaths;
+  }, [filePaths, folders]);
+
   const generatePreviewImage = useCallback(async () => {
     try {
-      const previewImageURL = await combineImages(filePaths, 1);
+      const reorderedPaths = reorderFilePaths(); // Use the reordered file paths
+      const previewImageURL = await combineImages(reorderedPaths, 1);
       setPreviewImage(previewImageURL[0]);
     } catch (error) {
       console.error("Failed to generate preview image:", error);
     }
-  }, [filePaths]);
+  }, [reorderFilePaths]);
+
+  useEffect(() => {
+    if (filePaths.length > 0) {
+      generatePreviewImage();
+    }
+  }, [filePaths, folders, generatePreviewImage]);
 
   useEffect(() => {
     if (filePaths.length > 0) {
@@ -56,8 +89,9 @@ const Generator = ({
       setProgress(0);
       setGenerationComplete(false);
 
+      const reorderedPaths = reorderFilePaths();
       const combinedImageURLs = await combineImages(
-        filePaths,
+        reorderedPaths,
         numOfImages,
         (progress) => setProgress(progress)
       );
