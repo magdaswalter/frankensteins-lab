@@ -9,7 +9,7 @@ const App = () => {
   return (
     <Grid>
       <Header />
-      <Grid marginTop={5} marginBottom={5} width={"100%"}>
+      <Grid margin={5} width={"100%"}>
         <Routes>
           <Route path="/*" Component={HomePage} />
           <Route index path="/" Component={HomePage} />

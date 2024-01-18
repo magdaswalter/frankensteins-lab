@@ -28,7 +28,7 @@ const GeneratorStepper = () => {
   const [activeStep, setActiveStep] = useState(0);
   const [filePaths, setFilePaths] = useState<FileWithPath[]>([]);
   const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
-
+  const [mainFolders, setMainFolders] = useState<string[]>([]);
   const handleNext = () => {
     setActiveStep((prevActiveStep) => prevActiveStep + 1);
   };
@@ -41,16 +41,19 @@ const GeneratorStepper = () => {
     setFilePaths(files);
   };
 
+  const handleOnMainFoldersExtracted = (mainFolders: string[]) => {
+    setMainFolders(mainFolders);
+  };
+
   const handleSetGeneratedImages = (images: GeneratedImage[]) => {
     setGeneratedImages(images);
   };
-
   return (
     <Grid
       container
       direction="column"
       alignItems="center"
-      width="100%"
+      width="calc(100% - 80px)"
       padding={2}
     >
       <Grid item width={"100%"}>
@@ -72,9 +75,15 @@ const GeneratorStepper = () => {
           <Typography variant="h5">{steps[activeStep]}</Typography>
           {/* Render the content of each step */}
           {activeStep === 0 && <CollectionDetails />}
-          {activeStep === 1 && <Upload setFilePaths={handleSetFilePaths} />}
+          {activeStep === 1 && (
+            <FolderUploader
+              onFilesAdded={handleSetFilePaths}
+              onMainFoldersExtracted={handleOnMainFoldersExtracted}
+            />
+          )}
           {activeStep === 2 && (
             <Generator
+              mainFolders={mainFolders}
               filePaths={filePaths}
               setGeneratedImages={handleSetGeneratedImages}
             />
@@ -100,22 +109,6 @@ const CollectionDetails = () => {
   return (
     <Grid item xs={12}>
       {/* Add your Collection Details component here */}
-    </Grid>
-  );
-};
-
-interface UploadProps {
-  setFilePaths: (files: FileWithPath[]) => void;
-}
-
-const Upload = ({ setFilePaths }: UploadProps) => {
-  const handleFolderUpload = (files: FileWithPath[]) => {
-    setFilePaths(files);
-  };
-
-  return (
-    <Grid item width={"100%"}>
-      <FolderUploader onFilesAdded={handleFolderUpload} />
     </Grid>
   );
 };

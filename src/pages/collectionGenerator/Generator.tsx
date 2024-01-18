@@ -1,7 +1,16 @@
-import React, { useState } from "react";
-import { Button, Grid, Typography, CircularProgress, Box } from "@mui/material";
+import React, { useState, useEffect, useCallback } from "react";
+import {
+  Button,
+  Grid,
+  Typography,
+  CircularProgress,
+  Box,
+  Paper,
+} from "@mui/material";
 import { FileWithPath } from "react-dropzone";
-import { combineImages } from "./ImageCombiner"; // Adjust the import path as needed
+import { combineImages } from "./ImageCombiner";
+import { DndProvider, useDrag, useDrop } from "react-dnd";
+import { HTML5Backend } from "react-dnd-html5-backend";
 
 export interface GeneratedImage {
   id: number;
@@ -10,17 +19,36 @@ export interface GeneratedImage {
 
 interface GeneratorProps {
   filePaths: FileWithPath[];
+  mainFolders: string[];
   setGeneratedImages: (generatedImages: GeneratedImage[]) => void;
 }
 
-const Generator: React.FC<GeneratorProps> = ({
+const Generator = ({
   filePaths,
+  mainFolders,
   setGeneratedImages,
-}) => {
+}: GeneratorProps) => {
   const [numOfImages, setNumOfImages] = useState(1);
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [generationComplete, setGenerationComplete] = useState(false);
+  const [folders, setFolders] = useState(mainFolders);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+
+  const generatePreviewImage = useCallback(async () => {
+    try {
+      const previewImageURL = await combineImages(filePaths, 1);
+      setPreviewImage(previewImageURL[0]);
+    } catch (error) {
+      console.error("Failed to generate preview image:", error);
+    }
+  }, [filePaths]);
+
+  useEffect(() => {
+    if (filePaths.length > 0) {
+      generatePreviewImage();
+    }
+  }, [filePaths, generatePreviewImage]);
 
   const handleGenerateImages = async () => {
     try {
@@ -33,12 +61,10 @@ const Generator: React.FC<GeneratorProps> = ({
         numOfImages,
         (progress) => setProgress(progress)
       );
-
       const combinedImages = combinedImageURLs.map((imageURL, i) => ({
         id: i,
-        imageURL: imageURL,
+        imageURL,
       }));
-
       setGeneratedImages(combinedImages);
       setGenerationComplete(true);
     } catch (error) {
@@ -48,47 +74,146 @@ const Generator: React.FC<GeneratorProps> = ({
     }
   };
 
+  interface FolderItemProps {
+    id: string;
+    folder: string;
+    index: number;
+    moveFolder: (dragIndex: number, hoverIndex: number) => void;
+  }
+
+  interface DragItem {
+    index: number;
+    id: string;
+  }
+  const FolderItem = ({ id, folder, index, moveFolder }: FolderItemProps) => {
+    const [, drag] = useDrag(
+      () => ({
+        type: "folder",
+        item: { id, index },
+      }),
+      [id, index]
+    );
+
+    const [, drop] = useDrop(
+      () => ({
+        accept: "folder",
+        hover(item: DragItem, monitor) {
+          if (item.index !== index) {
+            moveFolder(item.index, index);
+            item.index = index;
+          }
+        },
+      }),
+      [index, moveFolder]
+    );
+
+    return (
+      <Grid ref={(node) => drag(drop(node))} item style={getItemStyle()}>
+        {folder}
+      </Grid>
+    );
+  };
+
+  const moveFolder = (dragIndex: number, hoverIndex: number) => {
+    const dragFolder = folders[dragIndex];
+    const newFolders = Array.from(folders);
+    newFolders.splice(dragIndex, 1);
+    newFolders.splice(hoverIndex, 0, dragFolder);
+    setFolders(newFolders);
+  };
+
+  const getItemStyle = (): React.CSSProperties => ({
+    userSelect: "none",
+    padding: 8,
+    margin: `0 0 8px 0`,
+    background: "lightgrey",
+    color: "black",
+    cursor: "pointer",
+    fontSize: "20px",
+  });
+
+  const getListStyle = (): React.CSSProperties => ({
+    background: "lightgrey",
+    padding: 8,
+    width: 250,
+    minHeight: 400,
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "center",
+    alignItems: "center",
+  });
+
   return (
-    <Grid container spacing={2}>
-      <Grid item xs={12}>
-        <Typography variant="h5">Image Generator</Typography>
-      </Grid>
-      <Grid item xs={6}>
-        <label htmlFor="numOfImages">Number of Images:</label>
-        <input
-          type="number"
-          id="numOfImages"
-          value={numOfImages}
-          onChange={(e) => setNumOfImages(parseInt(e.target.value))}
-        />
-      </Grid>
-      <Grid item xs={6}>
-        <Button
-          variant="contained"
-          onClick={handleGenerateImages}
-          disabled={loading}
-        >
-          Generate Images
-        </Button>
-      </Grid>
-      {loading && (
-        <Grid item xs={12}>
-          <Box display="flex" alignItems="center">
-            <CircularProgress />
-            <Typography variant="body1" style={{ marginLeft: 10 }}>
-              Generating... {progress.toFixed(2)}%
-            </Typography>
-          </Box>
+    <DndProvider backend={HTML5Backend}>
+      <Grid container spacing={2}>
+        {previewImage && (
+          <Grid item xs={12} md={6}>
+            <Paper elevation={3} style={{ padding: "10px" }}>
+              <Typography variant="h6">Preview Image</Typography>
+              <img
+                src={previewImage}
+                alt="Preview"
+                style={{ maxWidth: "100%", height: "auto" }}
+              />
+            </Paper>
+          </Grid>
+        )}
+        <Grid item xs={12} md={6}>
+          <Grid container direction="column">
+            <Grid item>
+              <Grid container spacing={3}>
+                <Grid item>
+                  <label htmlFor="numOfImages">Number of Images:</label>
+                  <input
+                    type="number"
+                    id="numOfImages"
+                    value={numOfImages}
+                    onChange={(e) =>
+                      setNumOfImages(parseInt(e.target.value, 10))
+                    }
+                  />
+                  <Button
+                    variant="contained"
+                    onClick={handleGenerateImages}
+                    disabled={loading}
+                  >
+                    Generate Images
+                  </Button>
+                </Grid>
+                {loading && (
+                  <Grid item xs={12}>
+                    <Box display="flex" alignItems="center">
+                      <CircularProgress />
+                      <Typography variant="body1" style={{ marginLeft: 10 }}>
+                        Generating... {progress.toFixed(2)}%
+                      </Typography>
+                    </Box>
+                  </Grid>
+                )}
+                {generationComplete && (
+                  <Grid item xs={12}>
+                    <Typography variant="h6" style={{ color: "green" }}>
+                      Image generation complete!
+                    </Typography>
+                  </Grid>
+                )}
+              </Grid>
+            </Grid>
+            <Grid item style={getListStyle()}>
+              {folders.map((folder, index) => (
+                <FolderItem
+                  key={folder}
+                  id={folder}
+                  folder={folder}
+                  index={index}
+                  moveFolder={moveFolder}
+                />
+              ))}
+            </Grid>
+          </Grid>
         </Grid>
-      )}
-      {generationComplete && (
-        <Grid item xs={12}>
-          <Typography variant="h6" style={{ color: "green" }}>
-            Image generation complete!
-          </Typography>
-        </Grid>
-      )}
-    </Grid>
+      </Grid>
+    </DndProvider>
   );
 };
 

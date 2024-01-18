@@ -3,7 +3,7 @@ import { FileWithPath } from "react-dropzone";
 const combineImages = (
   filePaths: FileWithPath[],
   numOfImages: number,
-  progressCallback: (progress: number) => void
+  progressCallback?: (progress: number) => void
 ): Promise<string[]> => {
   return new Promise(async (resolve, reject) => {
     const organizedFiles: {
@@ -57,8 +57,11 @@ const combineImages = (
         combinedImages.push(canvas.toDataURL());
 
         // Update progress
-        const progressPercentage = (combinedImages.length / numOfImages) * 100;
-        progressCallback(progressPercentage);
+        if (progressCallback) {
+          const progressPercentage =
+            (combinedImages.length / numOfImages) * 100;
+          progressCallback(progressPercentage);
+        }
       } else {
         reject(new Error("Failed to get canvas context"));
         return;

@@ -4,12 +4,15 @@ import { Grid, Typography, Box } from "@mui/material";
 
 interface FolderUploaderProps {
   onFilesAdded: (files: FileWithPath[]) => void;
+  onMainFoldersExtracted: (folders: string[]) => void;
 }
 
-const FolderUploader = ({ onFilesAdded }: FolderUploaderProps) => {
+const FolderUploader = ({
+  onFilesAdded,
+  onMainFoldersExtracted,
+}: FolderUploaderProps) => {
   const [selectedFiles, setSelectedFiles] = useState<FileWithPath[]>([]);
   const [folderDropped, setFolderDropped] = useState<boolean>(false);
-
   const traverseFolder = (entry: any, path: string) => {
     const reader = entry.createReader();
     const readEntries = () => {
@@ -36,11 +39,12 @@ const FolderUploader = ({ onFilesAdded }: FolderUploaderProps) => {
 
     readEntries();
   };
-
-  const onDrop = async (acceptedFiles: File[]) => {
-    setFolderDropped(true); // Set the flag when a folder is dropped
+  const onDrop = async (acceptedFiles: FileWithPath[]) => {
+    setFolderDropped(true);
 
     const fileArray: FileWithPath[] = [];
+
+    const updatedMainFolders = new Set<string>();
 
     for (const file of acceptedFiles) {
       if (file.type === "application/x-moz-folder") {
@@ -54,12 +58,24 @@ const FolderUploader = ({ onFilesAdded }: FolderUploaderProps) => {
           }
         });
       } else {
+        const mainFolderName = extractMainFolderName(
+          file.path ? file.path : ""
+        );
+        updatedMainFolders.add(mainFolderName);
+
         fileArray.push(file as FileWithPath);
       }
     }
 
+    onMainFoldersExtracted(Array.from(updatedMainFolders));
+
     setSelectedFiles((prevFiles) => [...prevFiles, ...fileArray]);
     onFilesAdded([...selectedFiles, ...fileArray]);
+  };
+
+  const extractMainFolderName = (filePath: string): string => {
+    const parts = filePath.split("/");
+    return parts.length > 2 ? parts[2] : "";
   };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
