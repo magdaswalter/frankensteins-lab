@@ -14,10 +14,15 @@ import { FileWithPath } from "react-dropzone";
 import { combineImages } from "./ImageCombiner";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
+import { countImageCombinations } from "./PossibleImageCombinations";
 
 export interface GeneratedImage {
   id: number;
   imageURL: string;
+}
+
+interface MainFolderPercentages {
+  [key: string]: number;
 }
 
 interface GeneratorProps {
@@ -44,6 +49,24 @@ const Generator = ({
   const [selectedMainFolders, setSelectedMainFolders] = useState(
     new Set(folderNames.mainFolders)
   );
+
+  const [mainFolderPercentages, setMainFolderPercentages] =
+    useState<MainFolderPercentages>(
+      folderNames.mainFolders.reduce(
+        (acc: MainFolderPercentages, folder: string) => {
+          acc[folder] = 100;
+          return acc;
+        },
+        {}
+      )
+    );
+
+  const handlePercentageChange = (folder: string, value: number) => {
+    setMainFolderPercentages((prev: MainFolderPercentages) => ({
+      ...prev,
+      [folder]: value,
+    }));
+  };
 
   const reorderFilePaths = useCallback(() => {
     const reorderedFilePaths: FileWithPath[] = [];
@@ -76,7 +99,7 @@ const Generator = ({
 
   const generatePreviewImage = useCallback(async () => {
     try {
-      const reorderedPaths = reorderFilePaths(); // Use the reordered file paths
+      const reorderedPaths = reorderFilePaths();
       const previewImageURL = await combineImages(reorderedPaths, 1);
       setPreviewImage(previewImageURL[0]);
     } catch (error) {
@@ -110,7 +133,8 @@ const Generator = ({
       const combinedImageURLs = await combineImages(
         reorderedPaths,
         numOfImages,
-        (progress) => setProgress(progress)
+        (progress) => setProgress(progress),
+        mainFolderPercentages
       );
       const combinedImages = combinedImageURLs.map((imageURL, i) => ({
         id: i,
@@ -165,6 +189,17 @@ const Generator = ({
           onChange={() => toggleFolderSelection(folder)}
         />
         <span>{folder}</span>
+        <input
+          type="number"
+          value={mainFolderPercentages[folder]}
+          onChange={(e) =>
+            handlePercentageChange(folder, parseInt(e.target.value, 10))
+          }
+          min="0"
+          max="100"
+          style={{ width: "40px", marginRight: "10px" }}
+        />
+        <span>%</span>
         <IconButton ref={drag} size="small">
           <DragIndicatorIcon />
         </IconButton>
@@ -206,7 +241,7 @@ const Generator = ({
     background: "lightgrey",
     marginBottom: "40px",
     padding: 8,
-    width: 250,
+    width: "90%",
     minHeight: 400,
     display: "flex",
     flexDirection: "column",
@@ -264,24 +299,45 @@ const Generator = ({
               </Grid>
             </Grid>
             <Grid item>
-              <Grid container justifyContent={"center"}>
-                <Grid item>
-                  <label htmlFor="numOfImages">Number of Images:</label>
-                  <input
-                    type="number"
-                    id="numOfImages"
-                    value={numOfImages}
-                    onChange={(e) =>
-                      setNumOfImages(parseInt(e.target.value, 10))
-                    }
-                  />
-                  <Button
-                    variant="contained"
-                    onClick={handleGenerateImages}
-                    disabled={loading}
+              <Grid container>
+                <Grid item width="100%">
+                  <Grid
+                    container
+                    gap={1}
+                    justifyContent="center"
+                    alignItems="center"
                   >
-                    Generate Images
-                  </Button>
+                    <Grid item md={3}>
+                      <Typography>
+                        Maximum Unique Image Combination:{" "}
+                      </Typography>
+                      <Typography fontSize={16} fontWeight="bold">
+                        {countImageCombinations(filePaths)}
+                      </Typography>
+                    </Grid>
+                    <Grid item md={2}>
+                      <label htmlFor="numOfImages">Number of Images:</label>
+                    </Grid>
+                    <Grid item md={2}>
+                      <input
+                        type="number"
+                        id="numOfImages"
+                        value={numOfImages}
+                        onChange={(e) =>
+                          setNumOfImages(parseInt(e.target.value, 10))
+                        }
+                      />
+                    </Grid>
+                    <Grid item md={2}>
+                      <Button
+                        variant="contained"
+                        onClick={handleGenerateImages}
+                        disabled={loading}
+                      >
+                        Generate Images
+                      </Button>
+                    </Grid>
+                  </Grid>
                 </Grid>
                 {loading && (
                   <Grid item xs={12}>

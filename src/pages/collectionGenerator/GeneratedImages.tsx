@@ -11,9 +11,7 @@ interface GeneratedImagesProps {
 }
 
 const GeneratedImages = ({ images }: GeneratedImagesProps) => {
-  const handleDownloadImages = () => {
-    // Logic to download the generated images
-  };
+  const handleDownloadImages = () => {};
 
   return (
     <Grid container spacing={2}>

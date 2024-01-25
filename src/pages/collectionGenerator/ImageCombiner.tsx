@@ -3,12 +3,11 @@ import { FileWithPath } from "react-dropzone";
 const combineImages = (
   filePaths: FileWithPath[],
   numOfImages: number,
-  progressCallback?: (progress: number) => void
+  progressCallback?: (progress: number) => void,
+  folderPercentages?: { [key: string]: number }
 ): Promise<string[]> => {
   return new Promise(async (resolve, reject) => {
-    const organizedFiles: {
-      [key: string]: FileWithPath[];
-    } = {};
+    const organizedFiles: { [key: string]: FileWithPath[] } = {};
 
     filePaths.forEach((file) => {
       if (file.path) {
@@ -27,7 +26,22 @@ const combineImages = (
         img.onload = () => resolve(img);
         img.src = URL.createObjectURL(file);
       });
-    const combinationsInput = Object.values(organizedFiles);
+
+    const shouldIncludeFolder = (folderName: string): boolean => {
+      if (
+        !folderPercentages ||
+        (!folderPercentages[folderName] && folderPercentages[folderName] !== 0)
+      ) {
+        return true;
+      }
+      const probability = folderPercentages[folderName] / 100;
+      return Math.random() < probability;
+    };
+
+    const combinationsInput = Object.entries(organizedFiles)
+      .filter(([folderName]) => shouldIncludeFolder(folderName.split("/")[1]))
+      .map(([, files]) => files);
+
     const combinedImages: string[] = [];
 
     const generateCombination = async (
@@ -56,7 +70,6 @@ const combineImages = (
 
         combinedImages.push(canvas.toDataURL());
 
-        // Update progress
         if (progressCallback) {
           const progressPercentage =
             (combinedImages.length / numOfImages) * 100;
@@ -70,7 +83,8 @@ const combineImages = (
       for (let i = indexArray.length - 1; i >= 0; i--) {
         if (indexArray[i] < maxIndices[i] - 1) {
           indexArray[i]++;
-          return generateCombination(indexArray, maxIndices);
+          await generateCombination(indexArray, maxIndices);
+          return;
         } else if (i !== 0) {
           indexArray[i] = 0;
         }
