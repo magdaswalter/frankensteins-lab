@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   Button,
   Grid,
@@ -25,6 +25,19 @@ interface MainFolderPercentages {
   [key: string]: number;
 }
 
+interface FolderItemProps {
+  id: string;
+  folder: string;
+  index: number;
+  moveFolder: (dragIndex: number, hoverIndex: number) => void;
+}
+
+interface DragItem {
+  index: number;
+  id: string;
+  type: string;
+}
+
 interface GeneratorProps {
   filePaths: FileWithPath[];
   folderNames: {
@@ -44,33 +57,23 @@ const Generator = ({
   const [progress, setProgress] = useState(0);
   const [generationComplete, setGenerationComplete] = useState(false);
   const [mainFolders, setMainFolders] = useState(folderNames.mainFolders);
-
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [selectedMainFolders, setSelectedMainFolders] = useState(
     new Set(folderNames.mainFolders)
   );
 
-  const [mainFolderPercentages, setMainFolderPercentages] =
-    useState<MainFolderPercentages>(
-      folderNames.mainFolders.reduce(
-        (acc: MainFolderPercentages, folder: string) => {
-          acc[folder] = 100;
-          return acc;
-        },
-        {}
-      )
-    );
-
-  const handlePercentageChange = (folder: string, value: number) => {
-    setMainFolderPercentages((prev: MainFolderPercentages) => ({
-      ...prev,
-      [folder]: value,
-    }));
-  };
+  const tempMainFolderPercentages = useRef<MainFolderPercentages>(
+    folderNames.mainFolders.reduce(
+      (acc: MainFolderPercentages, folder: string) => {
+        acc[folder] = 100;
+        return acc;
+      },
+      {}
+    )
+  );
 
   const reorderFilePaths = useCallback(() => {
     const reorderedFilePaths: FileWithPath[] = [];
-
     const folderMap = new Map<string, FileWithPath[]>();
     filePaths.forEach((filePath) => {
       if (filePath?.path) {
@@ -81,7 +84,6 @@ const Generator = ({
         folderMap.get(mainFolder)!.push(filePath);
       }
     });
-
     mainFolders.forEach((folder) => {
       if (folderMap.has(folder)) {
         const folderFiles = folderMap.get(folder);
@@ -90,7 +92,6 @@ const Generator = ({
         }
       }
     });
-
     return reorderedFilePaths.filter((filePath) => {
       const mainFolder = filePath.path?.split("/")[2] ?? "";
       return selectedMainFolders.has(mainFolder);
@@ -134,7 +135,7 @@ const Generator = ({
         reorderedPaths,
         numOfImages,
         (progress) => setProgress(progress),
-        mainFolderPercentages
+        tempMainFolderPercentages.current
       );
       const combinedImages = combinedImageURLs.map((imageURL, i) => ({
         id: i,
@@ -147,64 +148,6 @@ const Generator = ({
     } finally {
       setLoading(false);
     }
-  };
-
-  interface FolderItemProps {
-    id: string;
-    folder: string;
-    index: number;
-    moveFolder: (dragIndex: number, hoverIndex: number) => void;
-  }
-
-  interface DragItem {
-    index: number;
-    id: string;
-  }
-  const FolderItem = ({ id, folder, index, moveFolder }: FolderItemProps) => {
-    const [, drag, preview] = useDrag(
-      () => ({
-        type: "folder",
-        item: { id, index },
-      }),
-      [id, index]
-    );
-
-    const [, drop] = useDrop(
-      () => ({
-        accept: "folder",
-        hover(item: DragItem, monitor) {
-          if (item.index !== index) {
-            moveFolder(item.index, index);
-            item.index = index;
-          }
-        },
-      }),
-      [index, moveFolder]
-    );
-
-    return (
-      <Grid ref={(node) => drop(preview(node))} item style={getItemStyle()}>
-        <Checkbox
-          checked={selectedMainFolders.has(folder)}
-          onChange={() => toggleFolderSelection(folder)}
-        />
-        <span>{folder}</span>
-        <input
-          type="number"
-          value={mainFolderPercentages[folder]}
-          onChange={(e) =>
-            handlePercentageChange(folder, parseInt(e.target.value, 10))
-          }
-          min="0"
-          max="100"
-          style={{ width: "40px", marginRight: "10px" }}
-        />
-        <span>%</span>
-        <IconButton ref={drag} size="small">
-          <DragIndicatorIcon />
-        </IconButton>
-      </Grid>
-    );
   };
 
   const toggleFolderSelection = (folder: string) => {
@@ -248,6 +191,62 @@ const Generator = ({
     justifyContent: "center",
     alignItems: "center",
   });
+
+  const FolderItem = ({ id, folder, index, moveFolder }: FolderItemProps) => {
+    const [localPercentage, setLocalPercentage] = useState(
+      tempMainFolderPercentages.current[folder]
+    );
+    const [, drag, preview] = useDrag(
+      () => ({
+        type: "folder",
+        item: { id, index },
+      }),
+      [id, index]
+    );
+
+    const [, drop] = useDrop(
+      () => ({
+        accept: "folder",
+        hover(item: DragItem, monitor) {
+          if (item.index !== index) {
+            moveFolder(item.index, index);
+            item.index = index;
+          }
+        },
+      }),
+      [index, moveFolder]
+    );
+
+    const handleLocalPercentageChange = (
+      e: React.ChangeEvent<HTMLInputElement>
+    ) => {
+      const newValue = parseInt(e.target.value, 10);
+      setLocalPercentage(newValue);
+      tempMainFolderPercentages.current[folder] = newValue;
+    };
+
+    return (
+      <Grid ref={(node) => drop(preview(node))} item style={getItemStyle()}>
+        <Checkbox
+          checked={selectedMainFolders.has(folder)}
+          onChange={() => toggleFolderSelection(folder)}
+        />
+        <span>{folder}</span>
+        <input
+          type="number"
+          value={localPercentage}
+          onChange={handleLocalPercentageChange}
+          min="0"
+          max="100"
+          style={{ width: "40px", marginRight: "10px" }}
+        />
+        <span>%</span>
+        <IconButton ref={drag} size="small">
+          <DragIndicatorIcon />
+        </IconButton>
+      </Grid>
+    );
+  };
 
   return (
     <DndProvider backend={HTML5Backend}>
