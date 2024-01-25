@@ -6,7 +6,10 @@ import {
   CircularProgress,
   Box,
   Paper,
+  Checkbox,
+  IconButton,
 } from "@mui/material";
+import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import { FileWithPath } from "react-dropzone";
 import { combineImages } from "./ImageCombiner";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
@@ -34,6 +37,7 @@ const Generator = ({
   const [generationComplete, setGenerationComplete] = useState(false);
   const [folders, setFolders] = useState(mainFolders);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [selectedFolders, setSelectedFolders] = useState(new Set(mainFolders));
 
   const reorderFilePaths = useCallback(() => {
     const reorderedFilePaths: FileWithPath[] = [];
@@ -58,8 +62,11 @@ const Generator = ({
       }
     });
 
-    return reorderedFilePaths;
-  }, [filePaths, folders]);
+    return reorderedFilePaths.filter((filePath) => {
+      const mainFolder = filePath.path?.split("/")[2] ?? "";
+      return selectedFolders.has(mainFolder);
+    });
+  }, [filePaths, folders, selectedFolders]);
 
   const generatePreviewImage = useCallback(async () => {
     try {
@@ -70,6 +77,10 @@ const Generator = ({
       console.error("Failed to generate preview image:", error);
     }
   }, [reorderFilePaths]);
+
+  useEffect(() => {
+    generatePreviewImage();
+  }, [selectedFolders, generatePreviewImage]);
 
   useEffect(() => {
     if (filePaths.length > 0) {
@@ -120,7 +131,7 @@ const Generator = ({
     id: string;
   }
   const FolderItem = ({ id, folder, index, moveFolder }: FolderItemProps) => {
-    const [, drag] = useDrag(
+    const [, drag, preview] = useDrag(
       () => ({
         type: "folder",
         item: { id, index },
@@ -142,10 +153,29 @@ const Generator = ({
     );
 
     return (
-      <Grid ref={(node) => drag(drop(node))} item style={getItemStyle()}>
-        {folder}
+      <Grid ref={(node) => drop(preview(node))} item style={getItemStyle()}>
+        <Checkbox
+          checked={selectedFolders.has(folder)}
+          onChange={() => toggleFolderSelection(folder)}
+        />
+        <span>{folder}</span>
+        <IconButton ref={drag} size="small">
+          <DragIndicatorIcon />
+        </IconButton>
       </Grid>
     );
+  };
+
+  const toggleFolderSelection = (folder: string) => {
+    setSelectedFolders((prevSelected) => {
+      const newSelected = new Set(prevSelected);
+      if (newSelected.has(folder)) {
+        newSelected.delete(folder);
+      } else {
+        newSelected.add(folder);
+      }
+      return newSelected;
+    });
   };
 
   const moveFolder = (dragIndex: number, hoverIndex: number) => {
@@ -168,6 +198,7 @@ const Generator = ({
 
   const getListStyle = (): React.CSSProperties => ({
     background: "lightgrey",
+    marginBottom: "40px",
     padding: 8,
     width: 250,
     minHeight: 400,
@@ -179,23 +210,55 @@ const Generator = ({
 
   return (
     <DndProvider backend={HTML5Backend}>
-      <Grid container spacing={2}>
-        {previewImage && (
-          <Grid item xs={12} md={6}>
-            <Paper elevation={3} style={{ padding: "10px" }}>
-              <Typography variant="h6">Preview Image</Typography>
-              <img
-                src={previewImage}
-                alt="Preview"
-                style={{ maxWidth: "100%", height: "auto" }}
-              />
-            </Paper>
-          </Grid>
-        )}
-        <Grid item xs={12} md={6}>
+      <Grid
+        container
+        padding={4}
+        sx={{ border: "3px solid grey", marginTop: "20px" }}
+      >
+        <Grid item xs={12} md={8}>
           <Grid container direction="column">
             <Grid item>
-              <Grid container spacing={3}>
+              <Grid container>
+                <Grid item xs={12} md={6}>
+                  <Grid
+                    container
+                    direction="column"
+                    rowGap={2}
+                    alignItems="center"
+                  >
+                    <Grid item>
+                      <Typography fontSize={22}>Layer order</Typography>
+                    </Grid>
+                    <Grid item style={getListStyle()}>
+                      {folders.map((folder, index) => (
+                        <FolderItem
+                          key={folder}
+                          id={folder}
+                          folder={folder}
+                          index={index}
+                          moveFolder={moveFolder}
+                        />
+                      ))}
+                    </Grid>
+                  </Grid>
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <Grid
+                    container
+                    direction={"column"}
+                    rowGap={2}
+                    alignItems="center"
+                  >
+                    <Grid item>
+                      <Typography fontSize={22}>Rarity percentage</Typography>
+                    </Grid>
+                    <Grid item>tobbi</Grid>
+                  </Grid>
+                </Grid>
+              </Grid>
+            </Grid>
+            <Grid item>
+              <Grid container justifyContent={"center"}>
                 <Grid item>
                   <label htmlFor="numOfImages">Number of Images:</label>
                   <input
@@ -227,25 +290,27 @@ const Generator = ({
                 {generationComplete && (
                   <Grid item xs={12}>
                     <Typography variant="h6" style={{ color: "green" }}>
-                      Image generation complete!
+                      Image generation complete! Check the generated images on
+                      the next step.
                     </Typography>
                   </Grid>
                 )}
               </Grid>
             </Grid>
-            <Grid item style={getListStyle()}>
-              {folders.map((folder, index) => (
-                <FolderItem
-                  key={folder}
-                  id={folder}
-                  folder={folder}
-                  index={index}
-                  moveFolder={moveFolder}
-                />
-              ))}
-            </Grid>
           </Grid>
         </Grid>
+        {previewImage && (
+          <Grid item xs={12} md={4}>
+            <Paper elevation={3} style={{ padding: "10px" }}>
+              <Typography variant="h6">Preview Image</Typography>
+              <img
+                src={previewImage}
+                alt="Preview"
+                style={{ maxWidth: "100%", height: "auto" }}
+              />
+            </Paper>
+          </Grid>
+        )}
       </Grid>
     </DndProvider>
   );

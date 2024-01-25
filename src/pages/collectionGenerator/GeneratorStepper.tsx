@@ -53,7 +53,7 @@ const GeneratorStepper = () => {
       container
       direction="column"
       alignItems="center"
-      width="calc(100% - 80px)"
+      width="100%"
       padding={2}
     >
       <Grid item width={"100%"}>

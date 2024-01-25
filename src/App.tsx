@@ -7,9 +7,9 @@ import CreatePage from "./pages/CreatePage";
 
 const App = () => {
   return (
-    <Grid>
+    <Grid container>
       <Header />
-      <Grid margin={5} width={"100%"}>
+      <Grid margin={5} item width={"100%"}>
         <Routes>
           <Route path="/*" Component={HomePage} />
           <Route index path="/" Component={HomePage} />
