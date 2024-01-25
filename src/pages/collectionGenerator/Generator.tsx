@@ -196,6 +196,8 @@ const Generator = ({
     const [localPercentage, setLocalPercentage] = useState(
       tempMainFolderPercentages.current[folder]
     );
+    const isSelected = selectedMainFolders.has(folder);
+
     const [, drag, preview] = useDrag(
       () => ({
         type: "folder",
@@ -236,6 +238,7 @@ const Generator = ({
           type="number"
           value={localPercentage}
           onChange={handleLocalPercentageChange}
+          disabled={!isSelected}
           min="0"
           max="100"
           style={{ width: "40px", marginRight: "10px" }}
