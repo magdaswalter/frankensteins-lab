@@ -22,22 +22,28 @@ export interface GeneratedImage {
 
 interface GeneratorProps {
   filePaths: FileWithPath[];
-  mainFolders: string[];
+  folderNames: {
+    mainFolders: string[];
+    rarityFolders: string[];
+  };
   setGeneratedImages: (generatedImages: GeneratedImage[]) => void;
 }
 
 const Generator = ({
   filePaths,
-  mainFolders,
+  folderNames,
   setGeneratedImages,
 }: GeneratorProps) => {
   const [numOfImages, setNumOfImages] = useState(1);
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [generationComplete, setGenerationComplete] = useState(false);
-  const [folders, setFolders] = useState(mainFolders);
+  const [mainFolders, setMainFolders] = useState(folderNames.mainFolders);
+
   const [previewImage, setPreviewImage] = useState<string | null>(null);
-  const [selectedFolders, setSelectedFolders] = useState(new Set(mainFolders));
+  const [selectedMainFolders, setSelectedMainFolders] = useState(
+    new Set(folderNames.mainFolders)
+  );
 
   const reorderFilePaths = useCallback(() => {
     const reorderedFilePaths: FileWithPath[] = [];
@@ -53,7 +59,7 @@ const Generator = ({
       }
     });
 
-    folders.forEach((folder) => {
+    mainFolders.forEach((folder) => {
       if (folderMap.has(folder)) {
         const folderFiles = folderMap.get(folder);
         if (folderFiles) {
@@ -64,9 +70,9 @@ const Generator = ({
 
     return reorderedFilePaths.filter((filePath) => {
       const mainFolder = filePath.path?.split("/")[2] ?? "";
-      return selectedFolders.has(mainFolder);
+      return selectedMainFolders.has(mainFolder);
     });
-  }, [filePaths, folders, selectedFolders]);
+  }, [filePaths, mainFolders, selectedMainFolders]);
 
   const generatePreviewImage = useCallback(async () => {
     try {
@@ -80,13 +86,13 @@ const Generator = ({
 
   useEffect(() => {
     generatePreviewImage();
-  }, [selectedFolders, generatePreviewImage]);
+  }, [selectedMainFolders, generatePreviewImage]);
 
   useEffect(() => {
     if (filePaths.length > 0) {
       generatePreviewImage();
     }
-  }, [filePaths, folders, generatePreviewImage]);
+  }, [filePaths, mainFolders, generatePreviewImage]);
 
   useEffect(() => {
     if (filePaths.length > 0) {
@@ -155,7 +161,7 @@ const Generator = ({
     return (
       <Grid ref={(node) => drop(preview(node))} item style={getItemStyle()}>
         <Checkbox
-          checked={selectedFolders.has(folder)}
+          checked={selectedMainFolders.has(folder)}
           onChange={() => toggleFolderSelection(folder)}
         />
         <span>{folder}</span>
@@ -167,7 +173,7 @@ const Generator = ({
   };
 
   const toggleFolderSelection = (folder: string) => {
-    setSelectedFolders((prevSelected) => {
+    setSelectedMainFolders((prevSelected) => {
       const newSelected = new Set(prevSelected);
       if (newSelected.has(folder)) {
         newSelected.delete(folder);
@@ -179,11 +185,11 @@ const Generator = ({
   };
 
   const moveFolder = (dragIndex: number, hoverIndex: number) => {
-    const dragFolder = folders[dragIndex];
-    const newFolders = Array.from(folders);
+    const dragFolder = mainFolders[dragIndex];
+    const newFolders = Array.from(mainFolders);
     newFolders.splice(dragIndex, 1);
     newFolders.splice(hoverIndex, 0, dragFolder);
-    setFolders(newFolders);
+    setMainFolders(newFolders);
   };
 
   const getItemStyle = (): React.CSSProperties => ({
@@ -230,7 +236,7 @@ const Generator = ({
                       <Typography fontSize={22}>Layer order</Typography>
                     </Grid>
                     <Grid item style={getListStyle()}>
-                      {folders.map((folder, index) => (
+                      {mainFolders.map((folder, index) => (
                         <FolderItem
                           key={folder}
                           id={folder}

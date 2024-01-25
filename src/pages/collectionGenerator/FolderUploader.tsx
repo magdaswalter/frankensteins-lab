@@ -4,15 +4,19 @@ import { Grid, Typography, Box } from "@mui/material";
 
 interface FolderUploaderProps {
   onFilesAdded: (files: FileWithPath[]) => void;
-  onMainFoldersExtracted: (folders: string[]) => void;
+  onFolderNamesExtracted: (folderNames: {
+    mainFolders: string[];
+    rarityFolders: string[];
+  }) => void;
 }
 
 const FolderUploader = ({
   onFilesAdded,
-  onMainFoldersExtracted,
+  onFolderNamesExtracted,
 }: FolderUploaderProps) => {
   const [selectedFiles, setSelectedFiles] = useState<FileWithPath[]>([]);
   const [folderDropped, setFolderDropped] = useState<boolean>(false);
+
   const traverseFolder = (entry: any, path: string) => {
     const reader = entry.createReader();
     const readEntries = () => {
@@ -39,12 +43,20 @@ const FolderUploader = ({
 
     readEntries();
   };
+
+  const extractFolderNames = (filePath: string) => {
+    const parts = filePath.split("/");
+    const mainFolder = parts.length > 2 ? parts[2] : "";
+    const rarityFolder = parts.length > 3 ? parts[3] : "";
+    return { mainFolder, rarityFolder };
+  };
+
   const onDrop = async (acceptedFiles: FileWithPath[]) => {
     setFolderDropped(true);
 
     const fileArray: FileWithPath[] = [];
-
     const updatedMainFolders = new Set<string>();
+    const updatedRarityFolders = new Set<string>();
 
     for (const file of acceptedFiles) {
       if (file.type === "application/x-moz-folder") {
@@ -58,30 +70,29 @@ const FolderUploader = ({
           }
         });
       } else {
-        const mainFolderName = extractMainFolderName(
+        const { mainFolder, rarityFolder } = extractFolderNames(
           file.path ? file.path : ""
         );
-        updatedMainFolders.add(mainFolderName);
 
+        updatedMainFolders.add(mainFolder);
+        updatedRarityFolders.add(rarityFolder);
         fileArray.push(file as FileWithPath);
       }
     }
 
-    onMainFoldersExtracted(Array.from(updatedMainFolders));
+    onFolderNamesExtracted({
+      mainFolders: Array.from(updatedMainFolders),
+      rarityFolders: Array.from(updatedRarityFolders),
+    });
 
     setSelectedFiles((prevFiles) => [...prevFiles, ...fileArray]);
     onFilesAdded([...selectedFiles, ...fileArray]);
   };
 
-  const extractMainFolderName = (filePath: string): string => {
-    const parts = filePath.split("/");
-    return parts.length > 2 ? parts[2] : "";
-  };
-
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     multiple: true,
-    onDragEnter: () => setFolderDropped(false), // Reset the flag on new drag
+    onDragEnter: () => setFolderDropped(false),
   });
 
   const dropzoneClassName = isDragActive

@@ -28,7 +28,10 @@ const GeneratorStepper = () => {
   const [activeStep, setActiveStep] = useState(0);
   const [filePaths, setFilePaths] = useState<FileWithPath[]>([]);
   const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
-  const [mainFolders, setMainFolders] = useState<string[]>([]);
+  const [folderNames, setFolderNames] = useState<{
+    mainFolders: string[];
+    rarityFolders: string[];
+  }>({ mainFolders: [], rarityFolders: [] });
   const handleNext = () => {
     setActiveStep((prevActiveStep) => prevActiveStep + 1);
   };
@@ -41,8 +44,11 @@ const GeneratorStepper = () => {
     setFilePaths(files);
   };
 
-  const handleOnMainFoldersExtracted = (mainFolders: string[]) => {
-    setMainFolders(mainFolders);
+  const handleOnFolderNamesExtracted = (folderNames: {
+    mainFolders: string[];
+    rarityFolders: string[];
+  }) => {
+    setFolderNames(folderNames);
   };
 
   const handleSetGeneratedImages = (images: GeneratedImage[]) => {
@@ -78,12 +84,12 @@ const GeneratorStepper = () => {
           {activeStep === 1 && (
             <FolderUploader
               onFilesAdded={handleSetFilePaths}
-              onMainFoldersExtracted={handleOnMainFoldersExtracted}
+              onFolderNamesExtracted={handleOnFolderNamesExtracted}
             />
           )}
           {activeStep === 2 && (
             <Generator
-              mainFolders={mainFolders}
+              folderNames={folderNames}
               filePaths={filePaths}
               setGeneratedImages={handleSetGeneratedImages}
             />
