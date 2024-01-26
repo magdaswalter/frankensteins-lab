@@ -8,10 +8,12 @@ import {
   Grid,
   styled,
 } from "@mui/material";
-import FolderUploader from "./FolderUploader";
+import FolderUploader from "./upload/FolderUploader";
 import { FileWithPath } from "react-dropzone";
-import Generator, { GeneratedImage } from "./Generator";
-import GeneratedImages from "./GeneratedImages";
+import GeneratorDetails, {
+  GeneratedImage,
+} from "./generatorDetails/GeneratorDetails";
+import GeneratedImages from "./generatedImages/GeneratedImages";
 
 const StyledStepper = styled(Stepper)(() => ({}));
 
@@ -88,7 +90,7 @@ const GeneratorStepper = () => {
             />
           )}
           {activeStep === 2 && (
-            <Generator
+            <GeneratorDetails
               folderNames={folderNames}
               filePaths={filePaths}
               setGeneratedImages={handleSetGeneratedImages}

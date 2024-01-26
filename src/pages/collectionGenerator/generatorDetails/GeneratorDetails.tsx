@@ -6,13 +6,12 @@ import {
   CircularProgress,
   Box,
   Paper,
-  Checkbox,
-  IconButton,
 } from "@mui/material";
-import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import { FileWithPath } from "react-dropzone";
 import { combineImages } from "./ImageCombiner";
-import { DndProvider, useDrag, useDrop } from "react-dnd";
+import { DndProvider } from "react-dnd";
+import LayerOrder from "./LayerOrder";
+import RarityPercentage from "./RarityPercentage";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { countImageCombinations } from "./PossibleImageCombinations";
 
@@ -25,19 +24,6 @@ interface MainFolderPercentages {
   [key: string]: number;
 }
 
-interface FolderItemProps {
-  id: string;
-  folder: string;
-  index: number;
-  moveFolder: (dragIndex: number, hoverIndex: number) => void;
-}
-
-interface DragItem {
-  index: number;
-  id: string;
-  type: string;
-}
-
 interface GeneratorProps {
   filePaths: FileWithPath[];
   folderNames: {
@@ -47,7 +33,7 @@ interface GeneratorProps {
   setGeneratedImages: (generatedImages: GeneratedImage[]) => void;
 }
 
-const Generator = ({
+const GeneratorDetails = ({
   filePaths,
   folderNames,
   setGeneratedImages,
@@ -170,87 +156,6 @@ const Generator = ({
     setMainFolders(newFolders);
   };
 
-  const getItemStyle = (): React.CSSProperties => ({
-    userSelect: "none",
-    padding: 8,
-    margin: `0 0 8px 0`,
-    background: "lightgrey",
-    color: "black",
-    cursor: "pointer",
-    fontSize: "20px",
-  });
-
-  const getListStyle = (): React.CSSProperties => ({
-    background: "lightgrey",
-    marginBottom: "40px",
-    padding: 8,
-    width: "90%",
-    minHeight: 400,
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "center",
-    alignItems: "center",
-  });
-
-  const FolderItem = ({ id, folder, index, moveFolder }: FolderItemProps) => {
-    const [localPercentage, setLocalPercentage] = useState(
-      tempMainFolderPercentages.current[folder]
-    );
-    const isSelected = selectedMainFolders.has(folder);
-
-    const [, drag, preview] = useDrag(
-      () => ({
-        type: "folder",
-        item: { id, index },
-      }),
-      [id, index]
-    );
-
-    const [, drop] = useDrop(
-      () => ({
-        accept: "folder",
-        hover(item: DragItem, monitor) {
-          if (item.index !== index) {
-            moveFolder(item.index, index);
-            item.index = index;
-          }
-        },
-      }),
-      [index, moveFolder]
-    );
-
-    const handleLocalPercentageChange = (
-      e: React.ChangeEvent<HTMLInputElement>
-    ) => {
-      const newValue = parseInt(e.target.value, 10);
-      setLocalPercentage(newValue);
-      tempMainFolderPercentages.current[folder] = newValue;
-    };
-
-    return (
-      <Grid ref={(node) => drop(preview(node))} item style={getItemStyle()}>
-        <Checkbox
-          checked={selectedMainFolders.has(folder)}
-          onChange={() => toggleFolderSelection(folder)}
-        />
-        <span>{folder}</span>
-        <input
-          type="number"
-          value={localPercentage}
-          onChange={handleLocalPercentageChange}
-          disabled={!isSelected}
-          min="0"
-          max="100"
-          style={{ width: "40px", marginRight: "10px" }}
-        />
-        <span>%</span>
-        <IconButton ref={drag} size="small">
-          <DragIndicatorIcon />
-        </IconButton>
-      </Grid>
-    );
-  };
-
   return (
     <DndProvider backend={HTML5Backend}>
       <Grid
@@ -263,40 +168,16 @@ const Generator = ({
             <Grid item>
               <Grid container>
                 <Grid item xs={12} md={6}>
-                  <Grid
-                    container
-                    direction="column"
-                    rowGap={2}
-                    alignItems="center"
-                  >
-                    <Grid item>
-                      <Typography fontSize={22}>Layer order</Typography>
-                    </Grid>
-                    <Grid item style={getListStyle()}>
-                      {mainFolders.map((folder, index) => (
-                        <FolderItem
-                          key={folder}
-                          id={folder}
-                          folder={folder}
-                          index={index}
-                          moveFolder={moveFolder}
-                        />
-                      ))}
-                    </Grid>
-                  </Grid>
+                  <LayerOrder
+                    mainFolders={mainFolders}
+                    moveFolder={moveFolder}
+                    selectedMainFolders={selectedMainFolders}
+                    toggleFolderSelection={toggleFolderSelection}
+                    tempMainFolderPercentages={tempMainFolderPercentages}
+                  />
                 </Grid>
                 <Grid item xs={12} md={6}>
-                  <Grid
-                    container
-                    direction={"column"}
-                    rowGap={2}
-                    alignItems="center"
-                  >
-                    <Grid item>
-                      <Typography fontSize={22}>Rarity percentage</Typography>
-                    </Grid>
-                    <Grid item>tobbi</Grid>
-                  </Grid>
+                  <RarityPercentage />
                 </Grid>
               </Grid>
             </Grid>
@@ -380,4 +261,4 @@ const Generator = ({
   );
 };
 
-export default Generator;
+export default GeneratorDetails;
