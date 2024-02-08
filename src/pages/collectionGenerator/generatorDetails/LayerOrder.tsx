@@ -1,7 +1,8 @@
 import React, { useRef, useState } from "react";
-import { Grid, Typography, Checkbox, IconButton } from "@mui/material";
+import { Grid, Typography, Checkbox, IconButton, Input } from "@mui/material";
 import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import { useDrag, useDrop } from "react-dnd";
+import { MainFolder } from "../upload/FolderUploader";
 
 interface DragItem {
   index: number;
@@ -12,19 +13,19 @@ interface DragItem {
 interface FolderItemProps {
   id: string;
   folder: string;
+  folders: { mainFolders: MainFolder[] };
+  onSetFolders: (folders: { mainFolders: MainFolder[] }) => void;
   index: number;
   moveFolder: (dragIndex: number, hoverIndex: number) => void;
-  selectedMainFolders: Set<string>;
   toggleFolderSelection: (folder: string) => void;
-  tempMainFolderPercentages: React.MutableRefObject<MainFolderPercentages>;
 }
 
 interface LayerOrderProps {
+  folders: { mainFolders: MainFolder[] };
   mainFolders: string[];
+  onSetFolders: (folders: { mainFolders: MainFolder[] }) => void;
   moveFolder: (dragIndex: number, hoverIndex: number) => void;
-  selectedMainFolders: Set<string>;
   toggleFolderSelection: (folder: string) => void;
-  tempMainFolderPercentages: React.MutableRefObject<MainFolderPercentages>;
 }
 
 interface MainFolderPercentages {
@@ -37,25 +38,23 @@ const getItemStyle = (): React.CSSProperties => ({
   margin: `0 0 8px 0`,
   background: "lightgrey",
   color: "black",
-  cursor: "pointer",
   fontSize: "20px",
 });
 
 const FolderItem = ({
   id,
+  folders,
+  onSetFolders,
   folder,
   index,
   moveFolder,
-  selectedMainFolders,
   toggleFolderSelection,
-  tempMainFolderPercentages,
 }: FolderItemProps) => {
-  const [localPercentage, setLocalPercentage] = useState(
-    tempMainFolderPercentages.current[folder]
-  );
-  const isSelected = selectedMainFolders.has(folder);
+  const isSelected =
+    folders.mainFolders.find((mainFolder) => mainFolder.name === folder)
+      ?.selected ?? false;
 
-  const [, drag] = useDrag(
+  const [, drag, preview] = useDrag(
     () => ({
       type: "folder",
       item: { id, index },
@@ -83,44 +82,61 @@ const FolderItem = ({
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
     const newValue = parseInt(e.target.value, 10);
-    setLocalPercentage(newValue);
-    tempMainFolderPercentages.current[folder] = newValue;
+    const updatedFolders = folders.mainFolders.map((mainFolder) => {
+      if (mainFolder.name === folder) {
+        return { ...mainFolder, percentage: newValue };
+      }
+      return mainFolder;
+    });
+    onSetFolders({ mainFolders: updatedFolders });
   };
 
   const ref = useRef<HTMLDivElement>(null);
 
-  drag(drop(ref));
+  preview(drop(ref));
 
   return (
-    <Grid ref={ref} item style={getItemStyle()}>
-      <Checkbox
-        checked={isSelected}
-        onChange={() => toggleFolderSelection(folder)}
-      />
-      <span>{folder}</span>
-      <input
-        type="number"
-        value={localPercentage}
-        onChange={handleLocalPercentageChange}
-        disabled={!isSelected}
-        min="0"
-        max="100"
-        style={{ width: "40px", marginRight: "10px" }}
-      />
-      <span>%</span>
-      <IconButton size="small">
-        <DragIndicatorIcon />
-      </IconButton>
-    </Grid>
+    <div ref={ref}>
+      <Grid container style={getItemStyle()} alignItems="center" columnGap={2}>
+        <Grid item>
+          <Checkbox
+            checked={isSelected}
+            onChange={() => toggleFolderSelection(folder)}
+          />
+        </Grid>
+        <Grid item>
+          <span>{folder}</span>
+        </Grid>
+        <Grid item>
+          <Input
+            type="number"
+            value={
+              folders.mainFolders.find(
+                (mainFolder) => mainFolder.name === folder
+              )?.percentage ?? 100
+            }
+            onChange={handleLocalPercentageChange}
+            disabled={!isSelected}
+            inputProps={{ min: "0", max: "100", step: "10" }}
+            style={{ width: "40px", marginRight: "10px" }}
+          />
+        </Grid>
+        <Grid item>
+          <IconButton size="small" ref={drag}>
+            <DragIndicatorIcon />
+          </IconButton>
+        </Grid>
+      </Grid>
+    </div>
   );
 };
 
 const LayerOrder = ({
+  folders,
+  onSetFolders,
   mainFolders,
   moveFolder,
-  selectedMainFolders,
   toggleFolderSelection,
-  tempMainFolderPercentages,
 }: LayerOrderProps) => {
   return (
     <Grid container direction="column" rowGap={2} alignItems="center">
@@ -132,12 +148,12 @@ const LayerOrder = ({
           <FolderItem
             key={folder}
             id={folder}
+            folders={folders}
+            onSetFolders={onSetFolders}
             folder={folder}
             index={index}
             moveFolder={moveFolder}
-            selectedMainFolders={selectedMainFolders}
             toggleFolderSelection={toggleFolderSelection}
-            tempMainFolderPercentages={tempMainFolderPercentages}
           />
         ))}
       </Grid>

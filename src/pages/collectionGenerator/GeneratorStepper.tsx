@@ -8,7 +8,7 @@ import {
   Grid,
   styled,
 } from "@mui/material";
-import FolderUploader from "./upload/FolderUploader";
+import FolderUploader, { MainFolder } from "./upload/FolderUploader";
 import { FileWithPath } from "react-dropzone";
 import GeneratorDetails, {
   GeneratedImage,
@@ -30,10 +30,9 @@ const GeneratorStepper = () => {
   const [activeStep, setActiveStep] = useState(0);
   const [filePaths, setFilePaths] = useState<FileWithPath[]>([]);
   const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
-  const [folderNames, setFolderNames] = useState<{
-    mainFolders: string[];
-    rarityFolders: string[];
-  }>({ mainFolders: [], rarityFolders: [] });
+  const [folders, setFolders] = useState<{
+    mainFolders: MainFolder[];
+  }>({ mainFolders: [] });
   const handleNext = () => {
     setActiveStep((prevActiveStep) => prevActiveStep + 1);
   };
@@ -46,16 +45,14 @@ const GeneratorStepper = () => {
     setFilePaths(files);
   };
 
-  const handleOnFolderNamesExtracted = (folderNames: {
-    mainFolders: string[];
-    rarityFolders: string[];
-  }) => {
-    setFolderNames(folderNames);
+  const onSetFolders = (folders: { mainFolders: MainFolder[] }) => {
+    setFolders(folders);
   };
 
   const handleSetGeneratedImages = (images: GeneratedImage[]) => {
     setGeneratedImages(images);
   };
+
   return (
     <Grid
       container
@@ -81,17 +78,17 @@ const GeneratorStepper = () => {
       ) : (
         <Grid item width={"100%"} textAlign="center">
           <Typography variant="h5">{steps[activeStep]}</Typography>
-          {/* Render the content of each step */}
           {activeStep === 0 && <CollectionDetails />}
           {activeStep === 1 && (
             <FolderUploader
               onFilesAdded={handleSetFilePaths}
-              onFolderNamesExtracted={handleOnFolderNamesExtracted}
+              onFoldersExtracted={onSetFolders}
             />
           )}
           {activeStep === 2 && (
             <GeneratorDetails
-              folderNames={folderNames}
+              folders={folders}
+              onSetFolders={onSetFolders}
               filePaths={filePaths}
               setGeneratedImages={handleSetGeneratedImages}
             />

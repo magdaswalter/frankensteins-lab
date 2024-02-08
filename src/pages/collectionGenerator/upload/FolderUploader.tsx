@@ -2,17 +2,26 @@ import React, { useState } from "react";
 import { useDropzone, FileWithPath } from "react-dropzone";
 import { Grid, Typography, Box } from "@mui/material";
 
+interface RarityFolder {
+  rarity: number;
+  name: string;
+}
+
+export interface MainFolder {
+  name: string;
+  percentage: number;
+  selected: boolean;
+  rarityFolders: RarityFolder[];
+}
+
 interface FolderUploaderProps {
   onFilesAdded: (files: FileWithPath[]) => void;
-  onFolderNamesExtracted: (folderNames: {
-    mainFolders: string[];
-    rarityFolders: string[];
-  }) => void;
+  onFoldersExtracted: (folders: { mainFolders: MainFolder[] }) => void;
 }
 
 const FolderUploader = ({
   onFilesAdded,
-  onFolderNamesExtracted,
+  onFoldersExtracted,
 }: FolderUploaderProps) => {
   const [selectedFiles, setSelectedFiles] = useState<FileWithPath[]>([]);
   const [folderDropped, setFolderDropped] = useState<boolean>(false);
@@ -44,19 +53,20 @@ const FolderUploader = ({
     readEntries();
   };
 
-  const extractFolderNames = (filePath: string) => {
+  const extractFolders = (filePath: string) => {
     const parts = filePath.split("/");
-    const mainFolder = parts.length > 2 ? parts[2] : "";
-    const rarityFolder = parts.length > 3 ? parts[3] : "";
-    return { mainFolder, rarityFolder };
+    const mainFolderName = parts.length > 2 ? parts[2] : "";
+    const rarityFolderName = parts.length > 3 ? parts[3] : "";
+    return { mainFolderName, rarityFolderName };
   };
 
   const onDrop = async (acceptedFiles: FileWithPath[]) => {
     setFolderDropped(true);
 
     const fileArray: FileWithPath[] = [];
-    const updatedMainFolders = new Set<string>();
-    const updatedRarityFolders = new Set<string>();
+    const updatedMainFolders: MainFolder[] = [];
+    const mainFoldersSet = new Set<string>();
+    const rarityFoldersSet = new Set<string>();
 
     for (const file of acceptedFiles) {
       if (file.type === "application/x-moz-folder") {
@@ -70,19 +80,35 @@ const FolderUploader = ({
           }
         });
       } else {
-        const { mainFolder, rarityFolder } = extractFolderNames(
+        const { mainFolderName, rarityFolderName } = extractFolders(
           file.path ? file.path : ""
         );
 
-        updatedMainFolders.add(mainFolder);
-        updatedRarityFolders.add(rarityFolder);
+        rarityFoldersSet.add(rarityFolderName);
+
+        if (!mainFoldersSet.has(mainFolderName)) {
+          mainFoldersSet.add(mainFolderName);
+          updatedMainFolders.push({
+            name: mainFolderName,
+            percentage: 100,
+            selected: true,
+            rarityFolders: [],
+          });
+        }
+
         fileArray.push(file as FileWithPath);
       }
     }
 
-    onFolderNamesExtracted({
-      mainFolders: Array.from(updatedMainFolders),
-      rarityFolders: Array.from(updatedRarityFolders),
+    updatedMainFolders.forEach((mainFolder) => {
+      const rarityFolders: RarityFolder[] = Array.from(rarityFoldersSet).map(
+        (name) => ({ name, rarity: 100 / rarityFoldersSet.size })
+      );
+      mainFolder.rarityFolders = rarityFolders;
+    });
+
+    onFoldersExtracted({
+      mainFolders: updatedMainFolders,
     });
 
     setSelectedFiles((prevFiles) => [...prevFiles, ...fileArray]);

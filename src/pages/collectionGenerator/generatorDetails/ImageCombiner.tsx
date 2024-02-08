@@ -6,7 +6,7 @@ const combineImages = (
   progressCallback?: (progress: number) => void,
   folderPercentages?: { [key: string]: number }
 ): Promise<string[]> => {
-  console.log(folderPercentages);
+  console.log(folderPercentages, filePaths);
   return new Promise(async (resolve, reject) => {
     const organizedFiles: { [key: string]: FileWithPath[] } = {};
     filePaths.forEach((file) => {

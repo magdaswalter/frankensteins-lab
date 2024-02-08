@@ -14,6 +14,7 @@ import LayerOrder from "./LayerOrder";
 import RarityPercentage from "./RarityPercentage";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { countImageCombinations } from "./PossibleImageCombinations";
+import { MainFolder } from "../upload/FolderUploader";
 
 export interface GeneratedImage {
   id: number;
@@ -26,77 +27,67 @@ interface MainFolderPercentages {
 
 interface GeneratorProps {
   filePaths: FileWithPath[];
-  folderNames: {
-    mainFolders: string[];
-    rarityFolders: string[];
+  folders: {
+    mainFolders: MainFolder[];
   };
+  onSetFolders: (folders: { mainFolders: MainFolder[] }) => void;
   setGeneratedImages: (generatedImages: GeneratedImage[]) => void;
 }
 
 const GeneratorDetails = ({
   filePaths,
-  folderNames,
+  folders,
+  onSetFolders,
   setGeneratedImages,
 }: GeneratorProps) => {
   const [numOfImages, setNumOfImages] = useState(1);
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [generationComplete, setGenerationComplete] = useState(false);
-  const [mainFolders, setMainFolders] = useState(folderNames.mainFolders);
+  const [mainFolders, setMainFolders] = useState<string[]>(() =>
+    folders.mainFolders.map((mainFolder) => mainFolder.name)
+  );
   const [previewImage, setPreviewImage] = useState<string | null>(null);
-  const [selectedMainFolders, setSelectedMainFolders] = useState(
-    new Set(folderNames.mainFolders)
-  );
 
-  const tempMainFolderPercentages = useRef<MainFolderPercentages>(
-    folderNames.mainFolders.reduce(
-      (acc: MainFolderPercentages, folder: string) => {
-        acc[folder] = 100;
-        return acc;
-      },
-      {}
-    )
-  );
-
-  const reorderFilePaths = useCallback(() => {
-    const reorderedFilePaths: FileWithPath[] = [];
-    const folderMap = new Map<string, FileWithPath[]>();
-    filePaths.forEach((filePath) => {
-      if (filePath?.path) {
-        const mainFolder = filePath.path.split("/")[2];
-        if (!folderMap.has(mainFolder)) {
-          folderMap.set(mainFolder, []);
-        }
-        folderMap.get(mainFolder)!.push(filePath);
-      }
-    });
-    mainFolders.forEach((folder) => {
-      if (folderMap.has(folder)) {
-        const folderFiles = folderMap.get(folder);
-        if (folderFiles) {
-          reorderedFilePaths.push(...folderFiles);
-        }
-      }
-    });
-    return reorderedFilePaths.filter((filePath) => {
-      const mainFolder = filePath.path?.split("/")[2] ?? "";
-      return selectedMainFolders.has(mainFolder);
-    });
-  }, [filePaths, mainFolders, selectedMainFolders]);
+  // const reorderFilePaths = useCallback(() => {
+  //   const reorderedFilePaths: FileWithPath[] = [];
+  //   const folderMap = new Map<string, FileWithPath[]>();
+  //   filePaths.forEach((filePath) => {
+  //     if (filePath?.path) {
+  //       const mainFolder = filePath.path.split("/")[2];
+  //       if (!folderMap.has(mainFolder)) {
+  //         folderMap.set(mainFolder, []);
+  //       }
+  //       folderMap.get(mainFolder)!.push(filePath);
+  //     }
+  //   });
+  //   mainFolders.forEach((folder) => {
+  //     if (folderMap.has(folder)) {
+  //       const folderFiles = folderMap.get(folder);
+  //       if (folderFiles) {
+  //         reorderedFilePaths.push(...folderFiles);
+  //       }
+  //     }
+  //   });
+  //   return reorderedFilePaths.filter((filePath) => {
+  //     const mainFolder = filePath.path?.split("/")[2] ?? "";
+  //     return selectedMainFolders.has(mainFolder);
+  //   });
+  // }, [filePaths, mainFolders]);
 
   const generatePreviewImage = useCallback(async () => {
-    try {
-      const reorderedPaths = reorderFilePaths();
-      const previewImageURL = await combineImages(reorderedPaths, 1);
-      setPreviewImage(previewImageURL[0]);
-    } catch (error) {
-      console.error("Failed to generate preview image:", error);
-    }
-  }, [reorderFilePaths]);
+    // try {
+    //   const reorderedPaths = reorderFilePaths();
+    //   const previewImageURL = await combineImages(reorderedPaths, 1);
+    //   setPreviewImage(previewImageURL[0]);
+    // } catch (error) {
+    //   console.error("Failed to generate preview image:", error);
+    // }
+  }, []);
 
   useEffect(() => {
     generatePreviewImage();
-  }, [selectedMainFolders, generatePreviewImage]);
+  }, [generatePreviewImage]);
 
   useEffect(() => {
     if (filePaths.length > 0) {
@@ -111,41 +102,41 @@ const GeneratorDetails = ({
   }, [filePaths, generatePreviewImage]);
 
   const handleGenerateImages = async () => {
-    try {
-      setLoading(true);
-      setProgress(0);
-      setGenerationComplete(false);
+    console.log("folders inside generateImages", folders);
+    // try {
+    //   setLoading(true);
+    //   setProgress(0);
+    //   setGenerationComplete(false);
 
-      const reorderedPaths = reorderFilePaths();
-      const combinedImageURLs = await combineImages(
-        reorderedPaths,
-        numOfImages,
-        (progress) => setProgress(progress),
-        tempMainFolderPercentages.current
-      );
-      const combinedImages = combinedImageURLs.map((imageURL, i) => ({
-        id: i,
-        imageURL,
-      }));
-      setGeneratedImages(combinedImages);
-      setGenerationComplete(true);
-    } catch (error) {
-      console.error("Failed to generate images:", error);
-    } finally {
-      setLoading(false);
-    }
+    //   const reorderedPaths = reorderFilePaths();
+    //   const combinedImageURLs = await combineImages(
+    //     reorderedPaths,
+    //     numOfImages,
+    //     (progress) => setProgress(progress),
+    //     tempMainFolderPercentages.current
+    //   );
+    //   const combinedImages = combinedImageURLs.map((imageURL, i) => ({
+    //     id: i,
+    //     imageURL,
+    //   }));
+    //   setGeneratedImages(combinedImages);
+    //   setGenerationComplete(true);
+    // } catch (error) {
+    //   console.error("Failed to generate images:", error);
+    // } finally {
+    //   setLoading(false);
+    // }
   };
 
-  const toggleFolderSelection = (folder: string) => {
-    setSelectedMainFolders((prevSelected) => {
-      const newSelected = new Set(prevSelected);
-      if (newSelected.has(folder)) {
-        newSelected.delete(folder);
-      } else {
-        newSelected.add(folder);
+  const toggleFolderSelection = (folderName: string) => {
+    const updatedFolders = folders.mainFolders.map((folder) => {
+      if (folder.name === folderName) {
+        return { ...folder, selected: !folder.selected };
       }
-      return newSelected;
+      return folder;
     });
+
+    onSetFolders({ mainFolders: updatedFolders });
   };
 
   const moveFolder = (dragIndex: number, hoverIndex: number) => {
@@ -169,15 +160,15 @@ const GeneratorDetails = ({
               <Grid container>
                 <Grid item xs={12} md={6}>
                   <LayerOrder
+                    folders={folders}
                     mainFolders={mainFolders}
+                    onSetFolders={onSetFolders}
                     moveFolder={moveFolder}
-                    selectedMainFolders={selectedMainFolders}
                     toggleFolderSelection={toggleFolderSelection}
-                    tempMainFolderPercentages={tempMainFolderPercentages}
                   />
                 </Grid>
                 <Grid item xs={12} md={6}>
-                  <RarityPercentage folderNames={folderNames} />
+                  <RarityPercentage folders={folders} />
                 </Grid>
               </Grid>
             </Grid>
