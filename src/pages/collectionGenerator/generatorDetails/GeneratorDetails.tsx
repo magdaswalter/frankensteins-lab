@@ -162,7 +162,10 @@ const GeneratorDetails = ({
                   />
                 </Grid>
                 <Grid item xs={12} md={6}>
-                  <RarityPercentage folders={folders} />
+                  <RarityPercentage
+                    folders={folders}
+                    onSetFolders={onSetFolders}
+                  />
                 </Grid>
               </Grid>
             </Grid>

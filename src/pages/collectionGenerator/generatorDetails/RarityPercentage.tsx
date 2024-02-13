@@ -13,16 +13,39 @@ interface RarityPercentageProps {
   folders: {
     mainFolders: MainFolder[];
   };
+  onSetFolders: (folders: { mainFolders: MainFolder[] }) => void;
 }
 
-const RarityPercentage = ({ folders }: RarityPercentageProps) => {
+const RarityPercentage = ({ folders, onSetFolders }: RarityPercentageProps) => {
   const [selectedMainFolder, setSelectedMainFolder] = useState(
     folders.mainFolders[0].name || ""
   );
 
-  // const handleRarityChange = (folder: string, value: number) => {
-  //   setRarityPercentages({ ...rarityPercentages, [folder]: value });
-  // };
+  const handleRarityChange = (folder: string, value: number) => {
+    const updatedMainFolders = folders.mainFolders.map((mainFolder) => {
+      if (mainFolder.name === selectedMainFolder) {
+        const updatedRarityFolders = mainFolder.rarityFolders.map(
+          (rarityFolder) => {
+            if (rarityFolder.name === folder) {
+              return {
+                ...rarityFolder,
+                rarity: value,
+              };
+            }
+            return rarityFolder;
+          }
+        );
+
+        return {
+          ...mainFolder,
+          rarityFolders: updatedRarityFolders,
+        };
+      }
+      return mainFolder;
+    });
+
+    onSetFolders({ ...folders, mainFolders: updatedMainFolders });
+  };
 
   return (
     <Grid container direction="column" rowGap={2} alignItems="center">
@@ -36,33 +59,35 @@ const RarityPercentage = ({ folders }: RarityPercentageProps) => {
             onChange={(e) => setSelectedMainFolder(e.target.value)}
             label="Main Folder"
           >
-            {/* {folders.mainFolders.map((folder, index) => (
-              <MenuItem key={index} value={folder}>
-                <div></div>
+            {folders.mainFolders.map((folder, index) => (
+              <MenuItem key={index} value={folder.name}>
+                <Typography>{folder.name}</Typography>
               </MenuItem>
-            ))} */}
+            ))}
           </Select>
         </FormControl>
       </Grid>
       <Grid item>
-        {/* {folders.rarityFolders.map((folder, index) => (
-          <Grid
-            key={index}
-            container
-            alignItems="center"
-            justifyContent="space-between"
-          >
-            <Typography>{folder}:</Typography>
-            <Input
-              type="number"
-              value={rarityPercentages[folder]}
-              onChange={(e) =>
-                handleRarityChange(folder, parseFloat(e.target.value))
-              }
-              inputProps={{ min: 0, max: 100, step: 5 }}
-            />
-          </Grid>
-        ))} */}
+        {folders.mainFolders
+          .find((mainFolder) => mainFolder.name === selectedMainFolder)
+          ?.rarityFolders.map((folder, index) => (
+            <Grid
+              key={index}
+              container
+              alignItems="center"
+              justifyContent="space-between"
+            >
+              <Typography>{folder.name}:</Typography>
+              <Input
+                type="number"
+                value={folder.rarity}
+                onChange={(e) =>
+                  handleRarityChange(folder.name, parseFloat(e.target.value))
+                }
+                inputProps={{ min: 0, max: 100, step: 5 }}
+              />
+            </Grid>
+          ))}
       </Grid>
     </Grid>
   );
