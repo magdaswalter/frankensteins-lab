@@ -1,12 +1,14 @@
 import { FileWithPath } from "react-dropzone";
+import { MainFolder } from "../upload/FolderUploader";
 
 const combineImages = (
   filePaths: FileWithPath[],
   numOfImages: number,
-  progressCallback?: (progress: number) => void,
-  folderPercentages?: { [key: string]: number }
+  folders: {
+    mainFolders: MainFolder[];
+  },
+  progressCallback?: (progress: number) => void
 ): Promise<string[]> => {
-  console.log(folderPercentages, filePaths);
   return new Promise(async (resolve, reject) => {
     const organizedFiles: { [key: string]: FileWithPath[] } = {};
     filePaths.forEach((file) => {
@@ -40,7 +42,10 @@ const combineImages = (
       let canvasInitialized = false;
 
       for (const [folderName, files] of Object.entries(organizedFiles)) {
-        const probability = folderPercentages?.[folderName] ?? 100;
+        const probability =
+          folders.mainFolders.find(
+            (mainFolder) => mainFolder.name === folderName
+          )?.percentage ?? 100;
         if (Math.random() * 100 < probability) {
           const fileIndex = imgIndex % files.length;
           const img = await loadImage(files[fileIndex]);

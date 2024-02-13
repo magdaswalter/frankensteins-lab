@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useRef } from "react";
 import { Grid, Typography, Checkbox, IconButton, Input } from "@mui/material";
 import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import { useDrag, useDrop } from "react-dnd";
@@ -22,21 +22,15 @@ interface FolderItemProps {
 
 interface LayerOrderProps {
   folders: { mainFolders: MainFolder[] };
-  mainFolders: string[];
   onSetFolders: (folders: { mainFolders: MainFolder[] }) => void;
   moveFolder: (dragIndex: number, hoverIndex: number) => void;
   toggleFolderSelection: (folder: string) => void;
-}
-
-interface MainFolderPercentages {
-  [key: string]: number;
 }
 
 const getItemStyle = (): React.CSSProperties => ({
   userSelect: "none",
   padding: 8,
   margin: `0 0 8px 0`,
-  background: "lightgrey",
   color: "black",
   fontSize: "20px",
 });
@@ -92,11 +86,9 @@ const FolderItem = ({
   };
 
   const ref = useRef<HTMLDivElement>(null);
-
   preview(drop(ref));
-
   return (
-    <div ref={ref}>
+    <Grid ref={ref}>
       <Grid container style={getItemStyle()} alignItems="center" columnGap={2}>
         <Grid item>
           <Checkbox
@@ -127,14 +119,13 @@ const FolderItem = ({
           </IconButton>
         </Grid>
       </Grid>
-    </div>
+    </Grid>
   );
 };
 
 const LayerOrder = ({
   folders,
   onSetFolders,
-  mainFolders,
   moveFolder,
   toggleFolderSelection,
 }: LayerOrderProps) => {
@@ -144,13 +135,13 @@ const LayerOrder = ({
         <Typography fontSize={22}>Layer order</Typography>
       </Grid>
       <Grid item style={getItemStyle()}>
-        {mainFolders.map((folder, index) => (
+        {folders.mainFolders.map((folder, index) => (
           <FolderItem
-            key={folder}
-            id={folder}
+            key={folder.name}
+            id={folder.name}
             folders={folders}
             onSetFolders={onSetFolders}
-            folder={folder}
+            folder={folder.name}
             index={index}
             moveFolder={moveFolder}
             toggleFolderSelection={toggleFolderSelection}
