@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Button,
   Grid,
@@ -14,49 +14,33 @@ import LayerOrder from "./LayerOrder";
 import RarityPercentage from "./RarityPercentage";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { countImageCombinations } from "./PossibleImageCombinations";
+import { MainFolder } from "../upload/FolderUploader";
 
 export interface GeneratedImage {
   id: number;
   imageURL: string;
 }
 
-interface MainFolderPercentages {
-  [key: string]: number;
-}
-
 interface GeneratorProps {
   filePaths: FileWithPath[];
-  folderNames: {
-    mainFolders: string[];
-    rarityFolders: string[];
+  folders: {
+    mainFolders: MainFolder[];
   };
+  onSetFolders: (folders: { mainFolders: MainFolder[] }) => void;
   setGeneratedImages: (generatedImages: GeneratedImage[]) => void;
 }
 
 const GeneratorDetails = ({
   filePaths,
-  folderNames,
+  folders,
+  onSetFolders,
   setGeneratedImages,
 }: GeneratorProps) => {
   const [numOfImages, setNumOfImages] = useState(1);
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [generationComplete, setGenerationComplete] = useState(false);
-  const [mainFolders, setMainFolders] = useState(folderNames.mainFolders);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
-  const [selectedMainFolders, setSelectedMainFolders] = useState(
-    new Set(folderNames.mainFolders)
-  );
-
-  const tempMainFolderPercentages = useRef<MainFolderPercentages>(
-    folderNames.mainFolders.reduce(
-      (acc: MainFolderPercentages, folder: string) => {
-        acc[folder] = 100;
-        return acc;
-      },
-      {}
-    )
-  );
 
   const reorderFilePaths = useCallback(() => {
     const reorderedFilePaths: FileWithPath[] = [];
@@ -70,9 +54,9 @@ const GeneratorDetails = ({
         folderMap.get(mainFolder)!.push(filePath);
       }
     });
-    mainFolders.forEach((folder) => {
-      if (folderMap.has(folder)) {
-        const folderFiles = folderMap.get(folder);
+    folders.mainFolders.forEach((mainFolder) => {
+      if (folderMap.has(mainFolder.name)) {
+        const folderFiles = folderMap.get(mainFolder.name);
         if (folderFiles) {
           reorderedFilePaths.push(...folderFiles);
         }
@@ -80,29 +64,31 @@ const GeneratorDetails = ({
     });
     return reorderedFilePaths.filter((filePath) => {
       const mainFolder = filePath.path?.split("/")[2] ?? "";
-      return selectedMainFolders.has(mainFolder);
+      return folders.mainFolders.some(
+        (folder) => folder.name === mainFolder && folder.selected
+      );
     });
-  }, [filePaths, mainFolders, selectedMainFolders]);
+  }, [filePaths, folders.mainFolders]);
 
   const generatePreviewImage = useCallback(async () => {
     try {
       const reorderedPaths = reorderFilePaths();
-      const previewImageURL = await combineImages(reorderedPaths, 1);
+      const previewImageURL = await combineImages(reorderedPaths, 1, folders);
       setPreviewImage(previewImageURL[0]);
     } catch (error) {
       console.error("Failed to generate preview image:", error);
     }
-  }, [reorderFilePaths]);
+  }, [folders, reorderFilePaths]);
 
   useEffect(() => {
     generatePreviewImage();
-  }, [selectedMainFolders, generatePreviewImage]);
+  }, [generatePreviewImage]);
 
   useEffect(() => {
     if (filePaths.length > 0) {
       generatePreviewImage();
     }
-  }, [filePaths, mainFolders, generatePreviewImage]);
+  }, [filePaths, folders.mainFolders, generatePreviewImage]);
 
   useEffect(() => {
     if (filePaths.length > 0) {
@@ -120,8 +106,8 @@ const GeneratorDetails = ({
       const combinedImageURLs = await combineImages(
         reorderedPaths,
         numOfImages,
-        (progress) => setProgress(progress),
-        tempMainFolderPercentages.current
+        folders,
+        (progress) => setProgress(progress)
       );
       const combinedImages = combinedImageURLs.map((imageURL, i) => ({
         id: i,
@@ -136,24 +122,24 @@ const GeneratorDetails = ({
     }
   };
 
-  const toggleFolderSelection = (folder: string) => {
-    setSelectedMainFolders((prevSelected) => {
-      const newSelected = new Set(prevSelected);
-      if (newSelected.has(folder)) {
-        newSelected.delete(folder);
-      } else {
-        newSelected.add(folder);
+  const toggleFolderSelection = (folderName: string) => {
+    const updatedFolders = folders.mainFolders.map((folder) => {
+      if (folder.name === folderName) {
+        return { ...folder, selected: !folder.selected };
       }
-      return newSelected;
+      return folder;
     });
+
+    onSetFolders({ mainFolders: updatedFolders });
   };
 
   const moveFolder = (dragIndex: number, hoverIndex: number) => {
-    const dragFolder = mainFolders[dragIndex];
-    const newFolders = Array.from(mainFolders);
+    const newFolders = Array.from(folders.mainFolders);
+    const dragFolder = newFolders[dragIndex];
     newFolders.splice(dragIndex, 1);
     newFolders.splice(hoverIndex, 0, dragFolder);
-    setMainFolders(newFolders);
+
+    onSetFolders({ mainFolders: newFolders });
   };
 
   return (
@@ -169,15 +155,14 @@ const GeneratorDetails = ({
               <Grid container>
                 <Grid item xs={12} md={6}>
                   <LayerOrder
-                    mainFolders={mainFolders}
+                    folders={folders}
+                    onSetFolders={onSetFolders}
                     moveFolder={moveFolder}
-                    selectedMainFolders={selectedMainFolders}
                     toggleFolderSelection={toggleFolderSelection}
-                    tempMainFolderPercentages={tempMainFolderPercentages}
                   />
                 </Grid>
                 <Grid item xs={12} md={6}>
-                  <RarityPercentage folderNames={folderNames} />
+                  <RarityPercentage folders={folders} />
                 </Grid>
               </Grid>
             </Grid>

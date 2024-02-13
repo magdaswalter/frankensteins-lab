@@ -7,28 +7,22 @@ import {
   Input,
   FormControl,
 } from "@mui/material";
+import { MainFolder } from "../upload/FolderUploader";
 
 interface RarityPercentageProps {
-  folderNames: {
-    mainFolders: string[];
-    rarityFolders: string[];
+  folders: {
+    mainFolders: MainFolder[];
   };
 }
 
-const RarityPercentage = ({ folderNames }: RarityPercentageProps) => {
+const RarityPercentage = ({ folders }: RarityPercentageProps) => {
   const [selectedMainFolder, setSelectedMainFolder] = useState(
-    folderNames.mainFolders[0] || ""
-  );
-  const [rarityPercentages, setRarityPercentages] = useState(
-    folderNames.rarityFolders.reduce((acc, folder) => {
-      acc[folder] = 100 / folderNames.rarityFolders.length;
-      return acc;
-    }, {} as { [key: string]: number })
+    folders.mainFolders[0].name || ""
   );
 
-  const handleRarityChange = (folder: string, value: number) => {
-    setRarityPercentages({ ...rarityPercentages, [folder]: value });
-  };
+  // const handleRarityChange = (folder: string, value: number) => {
+  //   setRarityPercentages({ ...rarityPercentages, [folder]: value });
+  // };
 
   return (
     <Grid container direction="column" rowGap={2} alignItems="center">
@@ -42,16 +36,16 @@ const RarityPercentage = ({ folderNames }: RarityPercentageProps) => {
             onChange={(e) => setSelectedMainFolder(e.target.value)}
             label="Main Folder"
           >
-            {folderNames.mainFolders.map((folder, index) => (
+            {/* {folders.mainFolders.map((folder, index) => (
               <MenuItem key={index} value={folder}>
-                {folder}
+                <div></div>
               </MenuItem>
-            ))}
+            ))} */}
           </Select>
         </FormControl>
       </Grid>
       <Grid item>
-        {folderNames.rarityFolders.map((folder, index) => (
+        {/* {folders.rarityFolders.map((folder, index) => (
           <Grid
             key={index}
             container
@@ -68,7 +62,7 @@ const RarityPercentage = ({ folderNames }: RarityPercentageProps) => {
               inputProps={{ min: 0, max: 100, step: 5 }}
             />
           </Grid>
-        ))}
+        ))} */}
       </Grid>
     </Grid>
   );
