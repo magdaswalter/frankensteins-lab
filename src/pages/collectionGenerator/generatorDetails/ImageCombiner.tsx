@@ -21,7 +21,6 @@ const combineImages = (
         }
       }
     });
-
     const loadImage = (file: FileWithPath): Promise<HTMLImageElement> =>
       new Promise((resolve) => {
         const img = new Image();
@@ -30,7 +29,6 @@ const combineImages = (
       });
 
     const combinedImages: string[] = [];
-
     for (let imgIndex = 0; imgIndex < numOfImages; imgIndex++) {
       const canvas = document.createElement("canvas");
       const context = canvas.getContext("2d");
@@ -40,7 +38,6 @@ const combineImages = (
       }
 
       let canvasInitialized = false;
-
       for (const [folderName, files] of Object.entries(organizedFiles)) {
         const probability =
           folders.mainFolders.find(

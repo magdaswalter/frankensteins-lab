@@ -15,6 +15,8 @@ import RarityPercentage from "./RarityPercentage";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { countImageCombinations } from "./PossibleImageCombinations";
 import { MainFolder } from "../upload/FolderUploader";
+import { GeneratePreviewImage } from "./GeneratePreviewImage";
+import { generateMetadata } from "./GenerateMetadata";
 
 export interface GeneratedImage {
   id: number;
@@ -73,8 +75,11 @@ const GeneratorDetails = ({
   const generatePreviewImage = useCallback(async () => {
     try {
       const reorderedPaths = reorderFilePaths();
-      const previewImageURL = await combineImages(reorderedPaths, 1, folders);
-      setPreviewImage(previewImageURL[0]);
+      const previewImageURL = await GeneratePreviewImage(
+        reorderedPaths,
+        folders.mainFolders.map((folder) => folder.name)
+      );
+      setPreviewImage(previewImageURL);
     } catch (error) {
       console.error("Failed to generate preview image:", error);
     }
@@ -97,12 +102,12 @@ const GeneratorDetails = ({
   }, [filePaths, generatePreviewImage]);
 
   const handleGenerateImages = async () => {
+    const reorderedPaths = reorderFilePaths();
     try {
       setLoading(true);
       setProgress(0);
       setGenerationComplete(false);
 
-      const reorderedPaths = reorderFilePaths();
       const combinedImageURLs = await combineImages(
         reorderedPaths,
         numOfImages,
@@ -120,6 +125,7 @@ const GeneratorDetails = ({
     } finally {
       setLoading(false);
     }
+    console.log(generateMetadata(folders, reorderedPaths, numOfImages));
   };
 
   const toggleFolderSelection = (folderName: string) => {
