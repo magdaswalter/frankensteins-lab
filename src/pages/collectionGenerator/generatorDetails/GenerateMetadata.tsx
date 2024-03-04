@@ -1,11 +1,10 @@
-import { MainFolder } from "../upload/FolderUploader";
+import { MainFolder, RarityFolder } from "../upload/FolderUploader";
 import { FileWithPath } from "react-dropzone";
-
 interface Attribute {
   trait_type: string;
   value: string;
+  path: string;
 }
-
 interface MetadataObject {
   name: string;
   description: string;
@@ -20,15 +19,27 @@ export const generateMetadata = (
 ): MetadataObject[] => {
   const metadataObjects: MetadataObject[] = [];
 
+  const chooseRarityFolder = (rarityFolders: RarityFolder[]): RarityFolder => {
+    const totalRarity = rarityFolders.reduce(
+      (acc, folder) => acc + folder.rarity,
+      0
+    );
+    let randomPoint = Math.random() * totalRarity;
+    for (const folder of rarityFolders) {
+      randomPoint -= folder.rarity;
+      if (randomPoint <= 0) {
+        return folder;
+      }
+    }
+    return rarityFolders[rarityFolders.length - 1];
+  };
+
   const generateUniqueMetadata = (): MetadataObject => {
     while (true) {
       const attributes: Attribute[] = [];
       folders.mainFolders.forEach((folder) => {
-        if (Math.random() < folder.percentage / 100) {
-          const rarityFolder =
-            folder.rarityFolders[
-              Math.floor(Math.random() * folder.rarityFolders.length)
-            ];
+        if (folder.selected && Math.random() < folder.percentage / 100) {
+          const rarityFolder = chooseRarityFolder(folder.rarityFolders);
           const relevantFilePaths = filePaths.filter(
             (file) =>
               file.path &&
@@ -42,7 +53,11 @@ export const generateMetadata = (
             if (selectedFile && selectedFile.path) {
               const value =
                 selectedFile.path.split("/").pop()?.split(".").shift() || "";
-              attributes.push({ trait_type: folder.name, value });
+              attributes.push({
+                trait_type: folder.name,
+                value,
+                path: selectedFile.path,
+              });
             }
           }
         }

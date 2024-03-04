@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useDropzone, FileWithPath } from "react-dropzone";
 import { Grid, Typography, Box } from "@mui/material";
 
-interface RarityFolder {
+export interface RarityFolder {
   rarity: number;
   name: string;
 }
