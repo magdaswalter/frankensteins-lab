@@ -1,23 +1,29 @@
 import { MainFolder, RarityFolder } from "../upload/FolderUploader";
 import { FileWithPath } from "react-dropzone";
+
 interface Attribute {
   trait_type: string;
   value: string;
   path: string;
 }
+
 interface MetadataObject {
   name: string;
   description: string;
   image: string;
   attributes: Attribute[];
 }
+type NoMoreUniquesCallback = () => void;
 
 export const generateMetadata = (
   folders: { mainFolders: MainFolder[] },
   filePaths: FileWithPath[],
-  numOfImages: number
+  numOfImages: number,
+  noMoreUniquesCallback: NoMoreUniquesCallback
 ): MetadataObject[] => {
   const metadataObjects: MetadataObject[] = [];
+  let attempts = 0;
+  const maxAttempts = 1000;
 
   const chooseRarityFolder = (rarityFolders: RarityFolder[]): RarityFolder => {
     const totalRarity = rarityFolders.reduce(
@@ -31,11 +37,16 @@ export const generateMetadata = (
         return folder;
       }
     }
-    return rarityFolders[rarityFolders.length - 1];
+    return rarityFolders[rarityFolders.length - 1]; // Fallback
   };
 
-  const generateUniqueMetadata = (): MetadataObject => {
+  const generateUniqueMetadata = (): MetadataObject | null => {
     while (true) {
+      if (attempts >= maxAttempts) {
+        noMoreUniquesCallback();
+        return null;
+      }
+
       const attributes: Attribute[] = [];
       folders.mainFolders.forEach((folder) => {
         if (folder.selected && Math.random() < folder.percentage / 100) {
@@ -53,26 +64,26 @@ export const generateMetadata = (
             if (selectedFile && selectedFile.path) {
               const value =
                 selectedFile.path.split("/").pop()?.split(".").shift() || "";
-              attributes.push({
-                trait_type: folder.name,
-                value,
-                path: selectedFile.path,
-              });
+              const path = selectedFile.path;
+              attributes.push({ trait_type: folder.name, value, path });
             }
           }
         }
       });
+
+      attempts++;
 
       if (
         !metadataObjects.some(
           (obj) => JSON.stringify(obj.attributes) === JSON.stringify(attributes)
         )
       ) {
-        const id = metadataObjects.length + 1;
         return {
-          name: `Frankensteins lab #${id}`,
-          description: `Frankensteins lab #${id} - Generated and deployed with Frankensteins lab.`,
-          image: `/Frankensteins_lab#${id}.jpeg`,
+          name: `Frankensteins lab #${metadataObjects.length + 1}`,
+          description: `Frankensteins lab #${
+            metadataObjects.length + 1
+          } - Generated and deployed with Frankensteins lab.`,
+          image: `/Frankensteins_lab#${metadataObjects.length + 1}.jpeg`,
           attributes,
         };
       }
@@ -80,7 +91,12 @@ export const generateMetadata = (
   };
 
   for (let i = 0; i < numOfImages; i++) {
-    metadataObjects.push(generateUniqueMetadata());
+    const metadata = generateUniqueMetadata();
+    if (metadata) {
+      metadataObjects.push(metadata);
+    } else {
+      break;
+    }
   }
 
   return metadataObjects;

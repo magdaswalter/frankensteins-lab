@@ -125,7 +125,11 @@ const GeneratorDetails = ({
     } finally {
       setLoading(false);
     }
-    console.log(generateMetadata(folders, reorderedPaths, numOfImages));
+    console.log(
+      generateMetadata(folders, reorderedPaths, numOfImages, () => {
+        console.log("nomoreattempts");
+      })
+    );
   };
 
   const toggleFolderSelection = (folderName: string) => {
