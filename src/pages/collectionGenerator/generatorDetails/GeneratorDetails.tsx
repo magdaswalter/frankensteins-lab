@@ -8,7 +8,7 @@ import {
   Paper,
 } from "@mui/material";
 import { FileWithPath } from "react-dropzone";
-import { combineImages } from "./ImageCombiner";
+import { GenerateImages } from "./GenerateImages";
 import { DndProvider } from "react-dnd";
 import LayerOrder from "./LayerOrder";
 import RarityPercentage from "./RarityPercentage";
@@ -16,7 +16,7 @@ import { HTML5Backend } from "react-dnd-html5-backend";
 import { countImageCombinations } from "./PossibleImageCombinations";
 import { MainFolder } from "../upload/FolderUploader";
 import { GeneratePreviewImage } from "./GeneratePreviewImage";
-import { generateMetadata } from "./GenerateMetadata";
+import { MetadataObject, generateMetadata } from "./GenerateMetadata";
 
 export interface GeneratedImage {
   id: number;
@@ -39,9 +39,14 @@ const GeneratorDetails = ({
   setGeneratedImages,
 }: GeneratorProps) => {
   const [numOfImages, setNumOfImages] = useState(1);
-  const [loading, setLoading] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [generationComplete, setGenerationComplete] = useState(false);
+  const [generatedMetadata, setGeneratedMetadata] = useState<MetadataObject[]>(
+    []
+  );
+  const [loadingCollection, setLoadingCollection] = useState(false);
+  const [generatingMetadata, setGeneratingMetadata] = useState(false);
+  const [progressImageCombiner, setProgressImageCombiner] = useState(0);
+  const [generationCollectionComplete, setGenerationCollectionComplete] =
+    useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   const reorderFilePaths = useCallback(() => {
@@ -101,36 +106,53 @@ const GeneratorDetails = ({
     }
   }, [filePaths, generatePreviewImage]);
 
-  const handleGenerateImages = async () => {
+  const handleGenerateMetadata = async () => {
+    setLoadingCollection(true);
+    setGeneratingMetadata(true);
     const reorderedPaths = reorderFilePaths();
     try {
-      setLoading(true);
-      setProgress(0);
-      setGenerationComplete(false);
-
-      const combinedImageURLs = await combineImages(
+      await generateMetadata(
+        folders,
         reorderedPaths,
         numOfImages,
-        folders,
-        (progress) => setProgress(progress)
+        () => {
+          console.log("nomoreattempts");
+        },
+        (generatingMetadata) => setGeneratingMetadata(generatingMetadata),
+        (generatedMetadata) => setGeneratedMetadata(generatedMetadata)
       );
-      const combinedImages = combinedImageURLs.map((imageURL, i) => ({
-        id: i,
-        imageURL,
-      }));
-      setGeneratedImages(combinedImages);
-      setGenerationComplete(true);
     } catch (error) {
-      console.error("Failed to generate images:", error);
+      console.error("Failed to generate the metadata:", error);
+      setLoadingCollection(false);
+      setGeneratingMetadata(false);
     } finally {
-      setLoading(false);
+      setGeneratingMetadata(false);
     }
-    console.log(
-      generateMetadata(folders, reorderedPaths, numOfImages, () => {
-        console.log("nomoreattempts");
-      })
-    );
   };
+
+  const handleGenerateImages = useCallback(async () => {
+    try {
+      const combinedImages = await GenerateImages(
+        generatedMetadata,
+        (progressImageCombiner) =>
+          setProgressImageCombiner(progressImageCombiner)
+      );
+      setGeneratedImages(combinedImages);
+    } catch (error) {
+      console.error("Failed to generate the images:", error);
+      setLoadingCollection(false);
+    } finally {
+      setGenerationCollectionComplete(true);
+      setLoadingCollection(false);
+    }
+  }, [generatedMetadata, setGeneratedImages]);
+
+  useEffect(() => {
+    if (generatedMetadata.length > 0 && loadingCollection) {
+      handleGenerateImages();
+      setGenerationCollectionComplete(true);
+    }
+  }, [generatedMetadata, handleGenerateImages, loadingCollection]);
 
   const toggleFolderSelection = (folderName: string) => {
     const updatedFolders = folders.mainFolders.map((folder) => {
@@ -212,29 +234,56 @@ const GeneratorDetails = ({
                     <Grid item md={2}>
                       <Button
                         variant="contained"
-                        onClick={handleGenerateImages}
-                        disabled={loading}
+                        onClick={handleGenerateMetadata}
+                        disabled={loadingCollection}
                       >
-                        Generate Images
+                        Generate Collection
                       </Button>
                     </Grid>
                   </Grid>
                 </Grid>
-                {loading && (
+                {loadingCollection && (
                   <Grid item xs={12}>
-                    <Box display="flex" alignItems="center">
+                    <Grid container direction={"column"}>
                       <CircularProgress />
-                      <Typography variant="body1" style={{ marginLeft: 10 }}>
-                        Generating... {progress.toFixed(2)}%
-                      </Typography>
-                    </Box>
+                      <Grid item>
+                        <Box display="flex" alignItems="center">
+                          {generatingMetadata ? (
+                            <Typography
+                              variant="body1"
+                              style={{ marginLeft: 10 }}
+                            >
+                              Generating metadata...
+                            </Typography>
+                          ) : (
+                            <Typography
+                              variant="body1"
+                              style={{ marginLeft: 10 }}
+                            >
+                              Metadata generation completed.
+                            </Typography>
+                          )}
+                        </Box>
+                      </Grid>
+                      <Grid item>
+                        <Box display="flex" alignItems="center">
+                          <Typography
+                            variant="body1"
+                            style={{ marginLeft: 10 }}
+                          >
+                            Generating images {progressImageCombiner.toFixed(2)}
+                            %
+                          </Typography>
+                        </Box>
+                      </Grid>
+                    </Grid>
                   </Grid>
                 )}
-                {generationComplete && (
+                {generationCollectionComplete && (
                   <Grid item xs={12}>
                     <Typography variant="h6" style={{ color: "green" }}>
-                      Image generation complete! Check the generated images on
-                      the next step.
+                      Collection generation complete! Check the generated images
+                      and the metadata by downloading it.
                     </Typography>
                   </Grid>
                 )}
