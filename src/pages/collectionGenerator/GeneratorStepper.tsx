@@ -90,7 +90,7 @@ const GeneratorStepper = () => {
               folders={folders}
               onSetFolders={onSetFolders}
               filePaths={filePaths}
-              setGeneratedImages={handleSetGeneratedImages}
+              setGeneratedImagesCallback={handleSetGeneratedImages}
             />
           )}
           {activeStep === 3 && <GeneratedImages images={generatedImages} />}

@@ -7,6 +7,7 @@ import {
   Box,
   Paper,
 } from "@mui/material";
+import JSZip from "jszip";
 import { FileWithPath } from "react-dropzone";
 import { GenerateImages } from "./GenerateImages";
 import { DndProvider } from "react-dnd";
@@ -29,19 +30,20 @@ interface GeneratorProps {
     mainFolders: MainFolder[];
   };
   onSetFolders: (folders: { mainFolders: MainFolder[] }) => void;
-  setGeneratedImages: (generatedImages: GeneratedImage[]) => void;
+  setGeneratedImagesCallback: (generatedImages: GeneratedImage[]) => void;
 }
 
 const GeneratorDetails = ({
   filePaths,
   folders,
   onSetFolders,
-  setGeneratedImages,
+  setGeneratedImagesCallback,
 }: GeneratorProps) => {
   const [numOfImages, setNumOfImages] = useState(1);
   const [generatedMetadata, setGeneratedMetadata] = useState<MetadataObject[]>(
     []
   );
+  const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
   const [loadingCollection, setLoadingCollection] = useState(false);
   const [generatingMetadata, setGeneratingMetadata] = useState(false);
   const [progressImageCombiner, setProgressImageCombiner] = useState(0);
@@ -138,6 +140,7 @@ const GeneratorDetails = ({
           setProgressImageCombiner(progressImageCombiner)
       );
       setGeneratedImages(combinedImages);
+      setGeneratedImagesCallback(combinedImages);
     } catch (error) {
       console.error("Failed to generate the images:", error);
       setLoadingCollection(false);
@@ -145,7 +148,54 @@ const GeneratorDetails = ({
       setGenerationCollectionComplete(true);
       setLoadingCollection(false);
     }
-  }, [generatedMetadata, setGeneratedImages]);
+  }, [generatedMetadata, setGeneratedImagesCallback]);
+
+  const handleDownloadCollection = async () => {
+    const zip = new JSZip();
+
+    const metadataFolder = zip.folder("generated-metadata");
+
+    if (!metadataFolder) {
+      console.error("Failed to create metadata folder in zip.");
+      return;
+    }
+
+    generatedMetadata.forEach((metadata, index) => {
+      metadataFolder.file(
+        `Frankensteins-lab-meta${index + 1}.json`,
+        JSON.stringify(metadata)
+      );
+    });
+
+    const imagesFolder = zip.folder("generated-images");
+
+    if (!imagesFolder) {
+      console.error("Failed to create images folder in zip.");
+      return;
+    }
+
+    for (let i = 0; i < generatedImages.length; i++) {
+      const imageUrl = generatedImages[i].imageURL;
+      try {
+        const response = await fetch(imageUrl);
+        if (!response.ok) {
+          console.error(`Failed to fetch image: ${imageUrl}`);
+          continue;
+        }
+        const blob = await response.blob();
+        imagesFolder.file(`Frankensteins-lab-image${i + 1}.png`, blob);
+      } catch (error) {
+        console.error(`Failed to fetch image: ${imageUrl}`, error);
+      }
+    }
+
+    zip.generateAsync({ type: "blob" }).then((content) => {
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(content);
+      link.download = "Frankensteins-lab-generated-collection.zip";
+      link.click();
+    });
+  };
 
   useEffect(() => {
     if (generatedMetadata.length > 0 && loadingCollection) {
@@ -281,10 +331,22 @@ const GeneratorDetails = ({
                 )}
                 {generationCollectionComplete && (
                   <Grid item xs={12}>
-                    <Typography variant="h6" style={{ color: "green" }}>
-                      Collection generation complete! Check the generated images
-                      and the metadata by downloading it.
-                    </Typography>
+                    <Grid container>
+                      <Grid item>
+                        <Typography variant="h6" style={{ color: "green" }}>
+                          Collection generation complete! Check the generated
+                          images and the metadata by downloading it.
+                        </Typography>
+                      </Grid>
+                      <Grid item>
+                        <Button
+                          variant="contained"
+                          onClick={handleDownloadCollection}
+                        >
+                          Download Collection
+                        </Button>
+                      </Grid>
+                    </Grid>
                   </Grid>
                 )}
               </Grid>
